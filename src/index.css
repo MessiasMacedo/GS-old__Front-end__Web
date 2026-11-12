@@ -91,13 +91,15 @@ body {
 .exercicio-braco-esq { transform-origin: 80px 72px; animation-name: braco-esq; }
 .exercicio-braco-dir { transform-origin: 120px 72px; animation-name: braco-dir; }
 .exercicio-camera { animation: piscar-camera 1.6s ease-in-out infinite; }
+.exercicio-sentar { animation: sentar 2.4s ease-in-out infinite alternate; }
+@keyframes sentar { to { transform: translateY(16px); } }
 
 @keyframes braco-esq { from { transform: rotate(10deg); } to { transform: rotate(155deg); } }
 @keyframes braco-dir { from { transform: rotate(-10deg); } to { transform: rotate(-155deg); } }
 @keyframes piscar-camera { 50% { opacity: .35; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .exercicio-braco, .exercicio-camera { animation: none; }
+  .exercicio-braco, .exercicio-camera, .exercicio-sentar { animation: none; }
 }
 
 :focus-visible { outline: 4px solid var(--color-old-azul); outline-offset: 4px; }

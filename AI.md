@@ -39,6 +39,19 @@
 - **Provisório:** a sugestão é o 1º exercício ativo da rotina; na etapa seguinte quem decide é `lib/proximaSugestao.js`.
 - **Validação:** testado em 1280×800 (tablet deitado), 768×1024 (tablet em pé) e 375×812 (celular), sem rolagem lateral.
 
+### Etapa 7 — Cérebro local, parte 1: intenções (Claude Code)
+- **Prompt (resumo):** a Lumi só repetia o que a pessoa falava. O grupo aprovou um cérebro em duas camadas: camada 1 local e gratuita, camada 2 com IA (Gemini via Edge Function) só para conversa livre.
+- **Gerado:** `lib/intencoes.js`, uma tabela de regras (expressões regulares) lida de cima para baixo; a primeira que bate vence, então a ordem é a prioridade. Segurança vem primeiro ("caí", "dor no peito", "socorro") e tem resposta fixa que indica o SAMU (192), sem nunca passar pela IA. O texto é normalizado (sem acento e minúsculo) porque o reconhecimento de voz erra acentos. `respostaLocal` deixou de repetir a fala e passou a responder por intenção.
+- **Validação:** `npm run check` roda 18 frases de teste. Na primeira execução, "quero fazer exercício" foi classificada como "sim" (por causa do "quero"), e "caixa" seria lida como "caí". A ordem e os limites de palavra foram corrigidos até todos os casos passarem.
+
+### Etapa 8 — Exercício com visão computacional e detecção de queda (Claude Code)
+- **Prompt (resumo):** a Lumi deveria responder com personalidade ("olá", horas com piadinha), abrir a tela de exercício com o boneco e a câmera conferindo o movimento quando a pessoa pede, e perceber quando alguém cai rápido ou fica muito tempo parado (o grupo chamou de "desmaio"), com um comando de voz para demonstrar.
+- **Ajustes propostos pela IA e aceitos:** (1) a Lumi não diz "você desmaiou", porque seria diagnóstico; ela diz "parece que você caiu, você está bem?" e, sem movimento, "vou avisar a sua família" + SAMU 192. (2) A câmera continua ligando só no exercício (regra de privacidade da Home); o comando "câmera computacional" abre um **modo demonstração** assumido, com o aviso de câmera ligada visível.
+- **Dependência:** `@mediapipe/tasks-vision` 1.2.0 (Google, Apache-2.0), com versão exata, publicada havia 16 dias, e `npm audit` sem vulnerabilidades. O modelo de pose (5,8 MB) fica em `public/mediapipe`; o WASM (14 MB) é copiado do `node_modules` pelo `postinstall` e não vai para o git. A biblioteca é carregada com `import()` dinâmico, então a Home não baixa nada disso.
+- **Gerado:** `lib/movimento.js` (funções puras: fase do exercício por posição do punho ou ângulo do joelho, contador como máquina de 2 estados, detector de queda pela velocidade de descida do quadril + tronco deitado), hooks `usePose` (câmera + MediaPipe + desenho do esqueleto), `useExercicio` (liga os pontos às regras sem re-renderizar a cada quadro) e `useLumi` (modo da tela e pergunta pendente, que dá sentido ao "sim"/"não"); componentes `TelaExercicio`, `AlertaQueda` e `FiguraExercicio` (extraído da prévia da Home). Depois de uma pergunta, a Lumi abre o microfone sozinha. Ao terminar, a sessão é salva com `sessoesService.criar` e aparece no painel da família.
+- **Validação:** `npm run check` (contador e queda simulados). O MediaPipe foi testado em fotos do próprio site: braços para cima foram lidos como "cima" e as pessoas sentadas como "sentado". A conversa foi testada com reconhecimento de voz simulado ("Olá, Lumi", "câmera computacional desmaio" e "eu caí" abrem as telas certas). **Falta testar com câmera real:** os valores de `AJUSTES` em `movimento.js` precisam de calibragem no tablet.
+- **Pendente:** o aviso de verdade para a família precisa de um `alertasService` (mudança no contrato com a parte da API).
+
 ## Aplicação no projeto
 - [preencher: quais arquivos foram gerados, quais vocês alteraram]
 

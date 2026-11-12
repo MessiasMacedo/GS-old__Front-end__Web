@@ -92,8 +92,9 @@ export function useVoz({ idioma = "pt-BR", aoOuvir } = {}) {
     }
   }, []);
 
+  // aoTerminar: chamado quando a fala acaba (ex.: abrir o microfone depois de uma pergunta)
   const falar = useCallback(
-    (texto) => {
+    (texto, aoTerminar) => {
       if (!suportaFalar || !texto) {
         setEstado("parada");
         return;
@@ -104,7 +105,10 @@ export function useVoz({ idioma = "pt-BR", aoOuvir } = {}) {
       fala.rate = 0.92; // um pouco mais devagar: melhor compreensão
       if (vozRef.current) fala.voice = vozRef.current;
       fala.onstart = () => setEstado("falando");
-      fala.onend = () => setEstado("parada");
+      fala.onend = () => {
+        setEstado("parada");
+        aoTerminar?.();
+      };
       fala.onerror = () => setEstado("parada");
       window.speechSynthesis.speak(fala);
     },

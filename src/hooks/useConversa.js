@@ -6,39 +6,35 @@ const BOAS_VINDAS = "Olá! Que bom ter você aqui. Como posso ajudar hoje?";
 
 /**
  * useConversa — regra de negócio da conversa: ouvir, decidir a resposta, falar.
- * A tela só chama ouvir/dizer e mostra os textos.
- * Na etapa 2, `responder` passa a chamar a IA; a tela não muda.
+ * `responder` devolve um texto ou { texto, perguntar }. Com `perguntar`, a Lumi
+ * abre o microfone sozinha quando termina de falar: a pessoa só responde.
  */
 export function useConversa({ responder = respostaLocal } = {}) {
   const [falaUsuario, setFalaUsuario] = useState("");
   const [falaLumi, setFalaLumi] = useState(BOAS_VINDAS);
-  const falarRef = useRef(null);
+  const vozRef = useRef(null);
+
+  // A Lumi fala: em resposta a alguém ou por iniciativa própria (botão, exercício)
+  const dizer = useCallback((resposta, usuario = "") => {
+    const { texto, perguntar } = typeof resposta === "string" ? { texto: resposta } : resposta;
+    setFalaUsuario(usuario);
+    setFalaLumi(texto);
+    vozRef.current?.falar(texto, perguntar ? vozRef.current.ouvir : undefined);
+  }, []);
 
   const aoOuvir = useCallback(
     async (texto) => {
       setFalaUsuario(texto);
-      const resposta = await responder(texto);
-      setFalaLumi(resposta);
-      falarRef.current?.(resposta);
+      dizer(await responder(texto), texto);
     },
-    [responder]
+    [responder, dizer]
   );
 
   const voz = useVoz({ aoOuvir });
 
   useEffect(() => {
-    falarRef.current = voz.falar;
-  }, [voz.falar]);
-
-  // A Lumi fala por iniciativa própria (ex.: ao tocar num botão)
-  const dizer = useCallback(
-    (texto) => {
-      setFalaUsuario("");
-      setFalaLumi(texto);
-      voz.falar(texto);
-    },
-    [voz.falar]
-  );
+    vozRef.current = voz;
+  });
 
   return { ...voz, falaUsuario, falaLumi, dizer };
 }

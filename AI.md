@@ -33,6 +33,12 @@
 - **Gerado:** componente `PreviaExercicio` (indicador de câmera ligada, botão de parar, esqueleto com os pontos do corpo levantando os braços em animação CSS, contador 8/10) e seção com 3 passos e 3 números: 60% dos idosos insuficientemente ativos (IBGE, PNS 2019); 28% caem ao menos uma vez por ano (OMS, citada pelo Ministério da Saúde); 23% menos quedas com exercício regular (revisão Cochrane, 2019).
 - **A validar:** conferir as três fontes. O dado de 23% veio do conhecimento do modelo, não da busca.
 
+### Etapa 6 — Design da tela da Lumi no tablet (Claude Code)
+- **Prompt (resumo):** antes de dar autonomia à Lumi (cérebro local + IA), melhorar o design da tela `/lumi`; manter os botões, mas com outro visual.
+- **Gerado:** layout em duas colunas no tablet deitado (Lumi e conversa à esquerda; saudação e sugestão à direita), uma coluna no tablet em pé e no celular; novo componente `CartaoSugestao` ("A Lumi sugere" + "Vamos lá / Agora não"), botões de ação em cartões brancos com ícone colorido, balões no estilo do site, status em pílula, selo do microfone no canto para não cobrir a boca da Lumi.
+- **Provisório:** a sugestão é o 1º exercício ativo da rotina; na etapa seguinte quem decide é `lib/proximaSugestao.js`.
+- **Validação:** testado em 1280×800 (tablet deitado), 768×1024 (tablet em pé) e 375×812 (celular), sem rolagem lateral.
+
 ## Aplicação no projeto
 - [preencher: quais arquivos foram gerados, quais vocês alteraram]
 

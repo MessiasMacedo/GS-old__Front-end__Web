@@ -1,41 +1,49 @@
+import { useRef } from "react";
+import { useOlharSeguir } from "@/hooks/useOlharSeguir";
+
 /**
- * O rosto da Lumi: dois olhos e uma boca, desenhados em SVG.
- * Cada estado tem um comportamento (ver globals.css):
- *  parada   → respira e pisca
- *  ouvindo  → olhos abertos e atentos, anel pulsando
- *  pensando → olhar vai de um lado para o outro
- *  falando  → boca abre e fecha
+ * O rosto da Lumi: um núcleo de luz com halo, olhos e boca, em SVG.
+ * "Lumi" vem de luz: o halo é a parte que mais expressa o estado (ver index.css).
+ *  parada   → halo respira, ela pisca e olha em volta
+ *  ouvindo  → halo pulsa para fora, olhos atentos, boca pequena
+ *  pensando → um ponto orbita o halo, olhar para o alto, boca de "hmm"
+ *  falando  → halo vibra, boca abre e fecha
  * Componente só visual: recebe o estado, não sabe nada de voz.
+ * `seguirOlhar` faz o rosto acompanhar o mouse (usado no site).
  */
-export default function LumiRosto({ estado = "parada", className = "" }) {
+export default function LumiRosto({ estado = "parada", seguirOlhar = false, className = "" }) {
+  const ref = useRef(null);
+  useOlharSeguir(ref, seguirOlhar);
+
   return (
-    <div data-estado={estado} className={`lumi-rosto aspect-square rounded-full ${className}`} aria-hidden="true">
+    <div
+      ref={ref}
+      data-estado={estado}
+      data-seguir={seguirOlhar || undefined}
+      className={`lumi-rosto aspect-square ${className}`}
+      aria-hidden="true"
+    >
       <svg viewBox="0 0 200 200" className="h-full w-full">
-        <defs>
-          <radialGradient id="lumi-pele" cx="38%" cy="32%" r="80%">
-            <stop offset="0%" stopColor="#ffffff" />
-            <stop offset="35%" stopColor="#9ff0a5" />
-            <stop offset="100%" stopColor="#00c4cd" />
-          </radialGradient>
-        </defs>
+        <circle className="lumi-halo lumi-halo-fora" cx="100" cy="100" r="98" />
+        <circle className="lumi-halo lumi-halo-dentro" cx="100" cy="100" r="84" />
 
-        <circle cx="100" cy="100" r="96" fill="url(#lumi-pele)" />
+        <circle cx="100" cy="100" r="68" fill="#76e67e" />
+        {/* reflexo de luz */}
+        <ellipse cx="76" cy="64" rx="20" ry="10" fill="#ffffff" opacity=".45" transform="rotate(-32 76 64)" />
 
-        {/* bochechas */}
-        <circle cx="52" cy="122" r="11" fill="#ffffff" opacity=".35" />
-        <circle cx="148" cy="122" r="11" fill="#ffffff" opacity=".35" />
+        <g className="lumi-orbita"><circle cx="100" cy="8" r="7" fill="#192b83" /></g>
 
-        <g className="lumi-olhos">
-          <rect className="lumi-olho" x="58" y="64" width="24" height="38" rx="12" fill="#192b83" />
-          <rect className="lumi-olho" x="118" y="64" width="24" height="38" rx="12" fill="#192b83" />
-          {/* brilho nos olhos */}
-          <circle cx="74" cy="74" r="4" fill="#ffffff" />
-          <circle cx="134" cy="74" r="4" fill="#ffffff" />
+        <g className="lumi-face">
+          <g className="lumi-olhos">
+            <rect className="lumi-olho" x="73" y="78" width="16" height="30" rx="8" fill="#192b83" />
+            <rect className="lumi-olho" x="111" y="78" width="16" height="30" rx="8" fill="#192b83" />
+          </g>
+          <g fill="none" stroke="#192b83" strokeWidth="7" strokeLinecap="round">
+            <path className="lumi-boca lumi-boca-sorriso" d="M85 124 Q100 138 115 124" />
+            <path className="lumi-boca lumi-boca-pensando" d="M89 130 Q100 125 111 129" />
+          </g>
+          <ellipse className="lumi-boca lumi-boca-falando" cx="100" cy="129" rx="12" ry="10" fill="#192b83" />
         </g>
-
-        <path className="lumi-boca-sorriso" d="M74 130 Q100 152 126 130"
-          fill="none" stroke="#192b83" strokeWidth="8" strokeLinecap="round" />
-        <ellipse className="lumi-boca-falando" cx="100" cy="138" rx="15" ry="11" fill="#192b83" />
       </svg>
     </div>
   );

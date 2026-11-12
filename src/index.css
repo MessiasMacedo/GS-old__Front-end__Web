@@ -10,7 +10,7 @@
   --color-old-azul-claro: #e8ebf7;
   --color-old-verde-claro: #e9fbea;
   --color-old-ciano-claro: #e0f8f9;
-  --font-sans: "Atkinson Hyperlegible", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", ui-sans-serif, system-ui, sans-serif;
 }
 
 html, body, #root { height: 100%; }
@@ -20,47 +20,70 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ---------- Rosto da Lumi: um estado = um comportamento ---------- */
-.lumi-rosto { transition: box-shadow 400ms ease; }
+/* ---------- Rosto da Lumi: um estado = um comportamento ----------
+   A luz (halo) carrega o estado; olhos e boca dão a expressão.
+   --ox/--oy vêm do hook useOlharSeguir (rosto acompanha o mouse). */
 .lumi-rosto svg { overflow: visible; }
 
-.lumi-olhos, .lumi-olho, .lumi-boca-falando {
+.lumi-halo, .lumi-olhos, .lumi-olho, .lumi-boca {
   transform-box: fill-box;
   transform-origin: center;
 }
-.lumi-olhos { transition: transform 300ms ease; }
+.lumi-halo { fill: var(--color-old-ciano); }
+.lumi-halo-dentro { opacity: .3; }
+.lumi-halo-fora { opacity: .15; }
 
-/* piscar: vale para todos os estados, menos falando */
+.lumi-face {
+  transform: translate(var(--ox, 0px), var(--oy, 0px));
+  transition: transform 250ms ease-out;
+}
+.lumi-olhos { transition: transform 300ms ease; }
+.lumi-boca { transition: opacity 200ms ease, transform 300ms ease; }
+.lumi-boca-pensando, .lumi-boca-falando { opacity: 0; }
+
+/* o ponto que orbita gira em volta do centro do desenho */
+.lumi-orbita { transform-box: view-box; transform-origin: 100px 100px; opacity: 0; transition: opacity 300ms; }
+
+/* piscar: vale para todos os estados */
 .lumi-olho { animation: piscar 4.8s infinite; }
 .lumi-olho:nth-of-type(2) { animation-delay: 40ms; }
 
-.lumi-boca-falando { opacity: 0; }
+/* parada: respira e, quando ninguém mexe o mouse, olha em volta */
+.lumi-rosto[data-estado="parada"] .lumi-halo { animation: respirar 5s ease-in-out infinite; }
+.lumi-rosto[data-estado="parada"]:not([data-seguir]) .lumi-face { animation: espiar 10s ease-in-out infinite; }
 
-.lumi-rosto[data-estado="parada"] svg { animation: respirar 5s ease-in-out infinite; }
+/* ouvindo: halo pulsa para fora, olhos maiores, boca pequena */
+.lumi-rosto[data-estado="ouvindo"] .lumi-halo { animation: pulsar 1.6s ease-out infinite; }
+.lumi-rosto[data-estado="ouvindo"] .lumi-halo-fora { animation-delay: .5s; }
+.lumi-rosto[data-estado="ouvindo"] .lumi-olhos { transform: scale(1.1) translateY(-2px); }
+.lumi-rosto[data-estado="ouvindo"] .lumi-boca-sorriso { transform: scale(.7); }
 
-.lumi-rosto[data-estado="ouvindo"] { animation: ouvir 1.4s ease-out infinite; }
-.lumi-rosto[data-estado="ouvindo"] .lumi-olhos { transform: scale(1.12) translateY(-3px); }
+/* pensando: órbita, olhar para o alto, boca de "hmm" */
+.lumi-rosto[data-estado="pensando"] .lumi-orbita { opacity: 1; animation: orbitar 2.4s linear infinite; }
+.lumi-rosto[data-estado="pensando"] .lumi-olhos { transform: translate(6px, -6px); }
+.lumi-rosto[data-estado="pensando"] .lumi-boca-sorriso { opacity: 0; }
+.lumi-rosto[data-estado="pensando"] .lumi-boca-pensando { opacity: 1; }
 
-.lumi-rosto[data-estado="pensando"] .lumi-olhos { animation: olhar 1.8s ease-in-out infinite; }
-
+/* falando: halo vibra junto com a boca */
+.lumi-rosto[data-estado="falando"] .lumi-halo { animation: vibrar .45s ease-in-out infinite alternate; }
+.lumi-rosto[data-estado="falando"] .lumi-halo-fora { animation-delay: .22s; }
 .lumi-rosto[data-estado="falando"] .lumi-boca-sorriso { opacity: 0; }
 .lumi-rosto[data-estado="falando"] .lumi-boca-falando { opacity: 1; animation: falar-boca .32s ease-in-out infinite alternate; }
 
-@keyframes piscar   { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.08); } }
-@keyframes respirar { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
-@keyframes ouvir {
-  0%   { box-shadow: 0 0 0 0 rgb(0 196 205 / .55); }
-  100% { box-shadow: 0 0 0 36px rgb(0 196 205 / 0); }
+@keyframes piscar     { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.08); } }
+@keyframes respirar   { 50% { transform: scale(1.05); } }
+@keyframes pulsar     { from { transform: scale(.94); opacity: .45; } to { transform: scale(1.2); opacity: 0; } }
+@keyframes vibrar     { from { transform: scale(.97); } to { transform: scale(1.06); } }
+@keyframes orbitar    { to { transform: rotate(360deg); } }
+@keyframes falar-boca { from { transform: scale(1, .3); } to { transform: scale(.9, 1); } }
+@keyframes espiar {
+  0%, 30%, 88%, 100% { transform: translate(0, 0); }
+  38%, 52% { transform: translate(-6px, 1px); }
+  60%, 74% { transform: translate(6px, -2px); }
 }
-@keyframes olhar {
-  0%, 100% { transform: translate(-7px, -5px); }
-  50%      { transform: translate(7px, -5px); }
-}
-@keyframes falar-boca { from { transform: scale(1, .25); } to { transform: scale(.9, 1); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .lumi-rosto, .lumi-rosto * { animation: none !important; }
-  .lumi-rosto[data-estado="falando"] .lumi-boca-falando { opacity: 1; }
+  .lumi-rosto, .lumi-rosto * { animation: none !important; transition: none !important; }
 }
 
 :focus-visible { outline: 4px solid var(--color-old-azul); outline-offset: 4px; }

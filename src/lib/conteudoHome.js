@@ -18,31 +18,68 @@ export const PROBLEMA = {
     "Os filhos trabalham, os netos moram longe, os amigos já não estão tão perto. O dia fica longo, a conversa fica curta e o corpo vai ficando parado.",
     "Do outro lado, a família se preocupa, mas nem sempre consegue acompanhar de perto. Muitas vezes só percebe que algo mudou quando a mudança já é grande.",
   ],
-  foto: { src: null, alt: "Senhora sentada sozinha perto da janela", descricao: "Idosa sozinha em casa, perto da janela, luz natural" },
+};
+
+// Mosaico da seção do problema (a primeira foto é a maior).
+export const FOTOS_SOZINHO = [
+  { src: "/imagens/sozinha-janela.jpg", alt: "Senhora idosa sentada sozinha à mesa, perto da janela" },
+  { src: "/imagens/sozinho-1.jpg", alt: "Senhor idoso sentado sozinho na poltrona, segurando uma xícara" },
+  { src: "/imagens/sozinho-2.jpg", alt: "Senhor idoso de costas, sozinho num banco de praça" },
+  { src: "/imagens/sozinho-3.jpg", alt: "Senhora almoçando sozinha, olhando pela janela" },
+];
+
+// Números grandes, todos do IBGE. Conferir nas publicações oficiais antes da apresentação.
+export const DADOS = {
+  titulo: "O Brasil está envelhecendo, e muita gente envelhece sozinha",
+  numeros: [
+    { valor: "32 mi", rotulo: "de brasileiros têm 60 anos ou mais", fonte: "IBGE, Censo 2022" },
+    { valor: "+56%", rotulo: "de pessoas idosas em 12 anos, de 2010 a 2022", fonte: "IBGE, Censo 2022" },
+    { valor: "15,6 mi", rotulo: "de pessoas moram sozinhas, e 41% delas são idosas", fonte: "IBGE, PNAD Contínua 2025" },
+    { valor: "75 mi", rotulo: "de idosos previstos em 2070: quase 4 em cada 10 brasileiros", fonte: "IBGE, Projeções da População 2024" },
+  ],
 };
 
 export const PILARES = [
   {
     titulo: "Companhia para conversar",
     texto: "A Lumi puxa conversa, pergunta como foi o dia, lembra dos assuntos favoritos e incentiva o contato com a família e os amigos.",
-    foto: { src: null, alt: "Senhor conversando sorrindo", descricao: "Idoso conversando e sorrindo, em casa" },
+    foto: { src: "/imagens/conversa.jpg", alt: "Grupo de idosos conversando e rindo na sala de casa", descricao: "Idoso conversando e sorrindo, em casa" },
   },
   {
     titulo: "Exercícios leves, no ritmo de cada um",
     texto: "Ela propõe movimentos simples, explica cada passo em voz alta e acompanha pela câmera, contando as repetições. Dá para parar a qualquer momento.",
-    foto: { src: null, alt: "Idosa alongando os braços sentada numa cadeira", descricao: "Idosa fazendo alongamento sentada numa cadeira" },
+    foto: { src: "/imagens/alongamento.jpg", alt: "Casal de idosos alongando os braços acima da cabeça, na sala", descricao: "Idosa fazendo alongamento sentada numa cadeira" },
   },
   {
     titulo: "A família por perto, mesmo longe",
     texto: "Filhos e netos acompanham as atividades num painel e recebem um aviso quando algo merece atenção, como vários dias sem exercício.",
-    foto: { src: null, alt: "Avó e neta olhando um celular juntas", descricao: "Avó com neto ou neta, juntos, olhando um celular" },
+    foto: { src: "/imagens/familia.jpg", alt: "Avós e neta olhando juntos a tela de um celular", descricao: "Avó com neto ou neta, juntos, olhando um celular" },
   },
 ];
 
-export const APARELHO = [
-  { titulo: "Câmera no topo", texto: "Acompanha os movimentos só durante os exercícios e só com permissão." },
-  { titulo: "Microfone e alto-falante", texto: "É só tocar na Lumi e falar. Ela responde em voz alta, devagar e com clareza." },
-  { titulo: "Tela grande de toque", texto: "Letras grandes, poucos botões e nada de menus escondidos." },
+// Seção de exercícios. A câmera só liga durante o exercício (regra do projeto):
+// ela percebe mudanças no desempenho, não faz diagnóstico nem vigia a casa.
+export const EXERCICIOS = {
+  titulo: "Exercícios leves, com a Lumi contando junto",
+  texto: "A Lumi propõe movimentos simples, explica cada passo em voz alta e acompanha pela câmera. Com o tempo, ela percebe quando o corpo começa a responder diferente.",
+  passos: [
+    { titulo: "Câmera só com permissão", texto: "Ela pede antes de ligar, mostra na tela que a câmera está ativa e o botão de parar fica sempre à vista." },
+    { titulo: "Conta as repetições", texto: "A câmera reconhece os pontos do corpo e conta cada movimento. Não grava vídeo: só os números ficam guardados." },
+    { titulo: "Percebe quando algo muda", texto: "Cada sessão é comparada com os dias anteriores da própria pessoa. Se as repetições caem muito ou os exercícios param, a família recebe um aviso." },
+  ],
+  aviso: "Não é diagnóstico: é um sinal para a família ligar, conversar e, se for o caso, procurar um profissional.",
+  // Conferir as fontes antes da apresentação.
+  dados: [
+    { valor: "60%", rotulo: "dos idosos brasileiros não fazem a atividade física recomendada", fonte: "IBGE, PNS 2019" },
+    { valor: "28%", rotulo: "das pessoas idosas sofrem ao menos uma queda por ano", fonte: "OMS, citada pelo Ministério da Saúde" },
+    { valor: "23%", rotulo: "menos quedas entre idosos que fazem exercícios regulares", fonte: "Revisão Cochrane, 2019" },
+  ],
+};
+
+export const COMO_FUNCIONA = [
+  { titulo: "Câmera só nos exercícios", texto: "Acompanha os movimentos só durante os exercícios e só com permissão." },
+  { titulo: "É só falar", texto: "Tocou na Lumi, pode conversar. Ela responde em voz alta, devagar e com clareza." },
+  { titulo: "Letras grandes, poucos botões", texto: "Nada de menus escondidos: o que importa fica sempre à vista." },
 ];
 
 export const PRIVACIDADE = {
@@ -55,7 +92,6 @@ export const PRIVACIDADE = {
   naoFaz: [
     "Não grava vídeo nem guarda imagens",
     "Não faz diagnóstico nem substitui médico",
-    "Não fica vigiando: a câmera só liga nos exercícios",
     "Não substitui o contato com pessoas reais",
   ],
 };

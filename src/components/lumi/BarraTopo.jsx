@@ -7,9 +7,9 @@ import Logo from "@/components/ui/Logo";
  */
 export default function BarraTopo({ hora }) {
   return (
-    <header className="flex items-center justify-between px-8 pt-5">
+    <header className="relative flex items-center justify-between px-8 pt-5">
       <Link to="/" aria-label="OLD, página inicial" className="text-3xl text-old-azul"><Logo /></Link>
-      <span className="text-2xl font-bold tabular-nums text-old-azul">{hora}</span>
+      <span className="rounded-full bg-white px-5 py-1.5 text-2xl font-bold tabular-nums text-old-azul shadow-sm ring-1 ring-old-azul/10">{hora}</span>
     </header>
   );
 }

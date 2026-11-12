@@ -17,12 +17,12 @@ export default function BotaoVoz({ estado, onOuvir, onParar, desabilitado }) {
       aria-label={rotulo}
       className="relative rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
     >
-      <LumiRosto estado={estado} className="w-40 sm:w-48 lg:w-56" />
+      <LumiRosto estado={estado} className="w-44 sm:w-56 lg:w-72" />
       <span
-        className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center justify-center
-                   size-14 rounded-full bg-old-azul text-white shadow-lg ring-4 ring-white"
+        className="absolute bottom-[4%] right-[4%] flex items-center justify-center
+                   size-16 rounded-full bg-old-azul text-white shadow-lg ring-[6px] ring-white"
       >
-        <span className="size-7">{ocupada ? <IconeParar /> : <IconeMicrofone />}</span>
+        <span className="size-8">{ocupada ? <IconeParar /> : <IconeMicrofone />}</span>
       </span>
     </button>
   );

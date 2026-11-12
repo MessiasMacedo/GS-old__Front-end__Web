@@ -14,26 +14,37 @@ export default function Inicio() {
   return (
     <>
       <main>
-        {/* Abertura */}
-        <section className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-16 md:grid-cols-[1.15fr_1fr] md:py-24">
-          <div>
-            <h1 className="text-5xl font-bold leading-[1.05] text-old-azul text-balance sm:text-6xl">
-              Envelhecer acompanhado, viver com autonomia.
-            </h1>
-            <p className="mt-6 max-w-xl text-xl leading-relaxed text-old-azul/85">
-              A Lumi é uma assistente que fica numa tela em casa. Ela conversa, propõe exercícios leves
-              e mantém a família por perto, sem tirar do idoso o controle da própria rotina.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/lumi" className="rounded-full bg-old-azul px-6 py-3 text-lg font-bold text-white">
-                Conversar com a Lumi
-              </Link>
-              <Link to="/familia" className="rounded-full px-6 py-3 text-lg font-bold text-old-azul ring-2 ring-inset ring-old-azul">
-                Ver o painel da família
-              </Link>
+        {/* Abertura: fundo azul para a luz da Lumi aparecer.
+            Sobre o azul, verde (7,8:1) e ciano (5,7:1) passam no contraste WCAG para texto. */}
+        <section className="relative overflow-hidden bg-old-azul text-white [&_:focus-visible]:outline-old-verde">
+          {/* anéis decorativos: o halo da Lumi vira grafismo da marca */}
+          <div aria-hidden="true" className="pointer-events-none absolute -right-48 top-1/2 size-[60rem] -translate-y-1/2 rounded-full border-[4rem] border-old-ciano/10" />
+          <div aria-hidden="true" className="pointer-events-none absolute -left-32 -top-32 size-80 rounded-full border-[2.5rem] border-old-verde/10" />
+
+          <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-6 py-16 md:grid-cols-[1.15fr_1fr] md:py-24">
+            <div>
+              <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-base font-bold">
+                <span className="size-2.5 rounded-full bg-old-verde" aria-hidden="true" />
+                Assistente para quem mora sozinho
+              </p>
+              <h1 className="mt-6 text-5xl font-extrabold leading-[1.02] text-balance sm:text-6xl lg:text-7xl">
+                Envelhecer acompanhado, <span className="text-old-verde">viver com autonomia.</span>
+              </h1>
+              <p className="mt-6 max-w-xl text-xl leading-relaxed text-white/90">
+                A Lumi é uma assistente que fica numa tela em casa. Ela conversa, propõe exercícios leves
+                e mantém a família por perto, sem tirar do idoso o controle da própria rotina.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link to="/lumi" className="rounded-full bg-old-verde px-7 py-3.5 text-lg font-bold text-old-azul transition-transform hover:-translate-y-0.5">
+                  Conversar com a Lumi
+                </Link>
+                <Link to="/familia" className="rounded-full px-7 py-3.5 text-lg font-bold text-white ring-2 ring-inset ring-white/70 transition-colors hover:bg-white/10">
+                  Ver o painel da família
+                </Link>
+              </div>
             </div>
+            <HeroLumi />
           </div>
-          <HeroLumi />
         </section>
 
         {/* Problema */}

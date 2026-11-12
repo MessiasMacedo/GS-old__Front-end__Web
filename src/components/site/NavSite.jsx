@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router";
+import Logo from "@/components/ui/Logo";
 
 const LINKS = [
   { href: "/", rotulo: "Início" },
@@ -11,7 +12,7 @@ export default function NavSite() {
   return (
     <header className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-old-azul/10">
       <nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
-        <Link to="/" className="text-2xl font-bold tracking-wide text-old-azul">OLD</Link>
+        <Link to="/" aria-label="OLD, página inicial" className="text-3xl text-old-azul"><Logo /></Link>
         <ul className="flex gap-1 sm:gap-2">
           {LINKS.map(({ href, rotulo }) => {
             const ativo = atual === href;

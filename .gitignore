@@ -1,3 +1,7 @@
 node_modules
 dist
 .env*.local
+
+# copiado do node_modules pelo postinstall
+public/mediapipe/wasm
+.env

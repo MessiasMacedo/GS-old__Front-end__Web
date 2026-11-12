@@ -3,7 +3,7 @@ import Logo from "@/components/ui/Logo";
 
 export default function Rodape() {
   return (
-    <footer className="bg-old-azul text-white">
+    <footer className="border-t border-white/15 bg-old-azul text-white">
       <div className="mx-auto grid max-w-6xl gap-8 px-6 py-12 md:grid-cols-2">
         <div>
           <Logo className="text-4xl" />

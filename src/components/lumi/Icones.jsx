@@ -27,6 +27,14 @@ export const IconeMicrofone = () => (
   <svg {...base}><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" /></svg>
 );
 
+export const IconeCheck = () => (
+  <svg {...base}><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+);
+
+export const IconeX = () => (
+  <svg {...base}><path d="M6 6l12 12M18 6L6 18" /></svg>
+);
+
 export const IconeParar = () => (
   <svg {...base}><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
 );

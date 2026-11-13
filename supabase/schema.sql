@@ -32,6 +32,14 @@ create table if not exists sessoes (
 -- ============ SEGURANÇA (RLS) ============
 -- O site usa a chave pública (publishable/anon). Quem decide o que ela pode fazer são estas regras.
 -- Limitação assumida (está no README): sem login, quem tem o link do painel pode editar.
+-- GRANT: liga a tabela à API. (Projetos novos podem vir sem expor tabelas automaticamente.)
+-- Sessões não recebem update/delete: é a primeira trava; a RLS abaixo é a segunda.
+grant select, insert, update, delete on contatos, rotina to anon;
+grant select, insert on sessoes to anon;
+-- O Supabase já dá TODAS as permissões ao público em tabelas novas; o grant acima não tira
+-- nada. Por isso o revoke: sem ele, a única trava das sessões seria a RLS.
+revoke update, delete, truncate on sessoes from anon, authenticated;
+
 alter table contatos enable row level security;
 alter table rotina enable row level security;
 alter table sessoes enable row level security;

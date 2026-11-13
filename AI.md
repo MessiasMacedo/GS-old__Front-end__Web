@@ -77,7 +77,11 @@
   - Só a chave pública vai no site; a proteção é a RLS.
   - Sem login, quem tem o link pode editar. É uma limitação assumida, registrada no README.
   - Os services escolhem os campos explicitamente, então um campo a mais vindo do formulário nunca chega ao banco.
-- **Validação:** sem o `.env.local`, o painel mostra "O banco ainda não foi configurado" em cada lista, sem quebrar. O teste do CRUD com o projeto real fica para quando o grupo criar o projeto.
+- **Validação:** sem o `.env.local`, o painel mostra "O banco ainda não foi configurado" em cada lista, sem quebrar. Com o projeto real, os testes passaram pelos próprios services:
+  - contatos e rotina: criar, editar, mudar só o `ativo` e excluir, tudo certo;
+  - o banco recusou repetição negativa;
+  - uma sessão criada apareceu no painel e entrou no resumo da semana.
+- **Erro encontrado no teste e corrigido:** o Supabase dá todas as permissões ao papel público em tabelas novas, então o `grant` não impedia apagar sessões. A RLS segurava (0 linhas alteradas), mas era a única trava. Foi acrescentado um `revoke update, delete` nas sessões.
 
 ## Aplicação no projeto
 - [preencher: quais arquivos foram gerados, quais vocês alteraram]

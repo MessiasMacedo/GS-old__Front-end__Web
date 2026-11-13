@@ -52,6 +52,33 @@
 - **Validação:** `npm run check` (contador e queda simulados). O MediaPipe foi testado em fotos do próprio site: braços para cima foram lidos como "cima" e as pessoas sentadas como "sentado". A conversa foi testada com reconhecimento de voz simulado ("Olá, Lumi", "câmera computacional desmaio" e "eu caí" abrem as telas certas). **Falta testar com câmera real:** os valores de `AJUSTES` em `movimento.js` precisam de calibragem no tablet.
 - **Pendente:** o aviso de verdade para a família precisa de um `alertasService` (mudança no contrato com a parte da API).
 
+### Etapa 9 — Voz da Lumi (Claude Code)
+- **Prompt (resumo):** a voz estava "assustadora"; o grupo queria uma voz suave, feminina, talvez de alguma biblioteca.
+- **Resposta (resumo):** a IA mostrou que não precisava de biblioteca. A voz vem do navegador, e o código pegava a primeira voz em português da lista; no Windows do grupo havia "Daniel" (masculina, antiga) e "Maria". Cada navegador já traz vozes femininas melhores: no Edge, as neurais Francisca e Thalita; no Chrome, "Google português do Brasil"; no iPad, Luciana.
+- **Gerado:** em `useVoz`, uma lista de vozes preferidas procurada por nome, na ordem da mais natural para a menos, caindo para qualquer voz pt-BR se nenhuma existir.
+- **Plano B, não feito:** voz de nuvem (Google Cloud TTS ou Azure) via Edge Function, se a voz do navegador ainda não agradar.
+
+### Etapa 10 — Tela da Lumi mais limpa (Claude Code)
+- **Prompt (resumo):** a tela estava "poluída para um idoso" (botões embaixo e do lado) e "quebrava do lado" quando chegava uma conversa (aparecia uma barra de rolagem).
+- **Análise da IA:** havia três jeitos de começar a conversar (tocar na Lumi, o selo do microfone e o botão "Conversar") e dois de começar o exercício (o cartão de sugestão e o botão "Exercícios"). Para quem tem pouca familiaridade com tecnologia, cada opção a mais é uma decisão a mais.
+- **Gerado:** saíram o botão "Conversar" (a própria Lumi é o botão) e o `CartaoSugestao` (a sugestão virou a linha de baixo do botão "Exercícios": "Elevação dos braços, 10 vezes"). Ficaram a Lumi, a conversa e 2 botões grandes. O tamanho da Lumi passou a respeitar também a altura da tela (`min(18rem, 42dvh)`), o título encolhe em telas baixas e a centralização usa `safe center`, que não corta o topo quando o conteúdo não cabe.
+- **Validação:** testado em 1170×526 (a janela do print do grupo, sem rolagem), 1280×800 (tablet) e 375×812 (celular, sem cortar a Lumi).
+
+### Etapa 11 — Banco de dados no Supabase (Claude Code)
+- **Prompt (resumo):** ligar o painel da família ao Supabase. O CRUD é de verdade, e o histórico mistura dados reais (criados pela Lumi) com uma semana fictícia para o painel não começar vazio.
+- **Dependência:** `@supabase/supabase-js` 2.118.0 (MIT), com versão exata. A 2.119.0 tinha só 8 dias e ficou de fora. `npm audit` sem vulnerabilidades.
+- **Gerado:**
+  - `supabase/schema.sql`: tabelas do contrato, validação no próprio banco (`check`) e RLS, em que sessões só podem ser lidas e criadas. O seed só entra com a tabela vazia e usa datas relativas a hoje.
+  - `src/lib/supabase.js`: cliente, `tabela()` e `consultar()`.
+  - Novo corpo dos 3 services, **sem mudar nomes, parâmetros nem formatos do contrato**.
+  - `.env.example`.
+  - `_fake.js` foi removido, porque deixou de ser usado.
+- **Decisões:**
+  - Só a chave pública vai no site; a proteção é a RLS.
+  - Sem login, quem tem o link pode editar. É uma limitação assumida, registrada no README.
+  - Os services escolhem os campos explicitamente, então um campo a mais vindo do formulário nunca chega ao banco.
+- **Validação:** sem o `.env.local`, o painel mostra "O banco ainda não foi configurado" em cada lista, sem quebrar. O teste do CRUD com o projeto real fica para quando o grupo criar o projeto.
+
 ## Aplicação no projeto
 - [preencher: quais arquivos foram gerados, quais vocês alteraram]
 

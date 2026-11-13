@@ -30,9 +30,10 @@ Nomes das funções, parâmetros e formato dos objetos **não mudam** sem combin
 | `listar()` | — | `[{ id, exercicio, repeticoes, data }]`, mais recentes primeiro |
 | `criar(dados)` | `{ exercicio, repeticoes }` | a sessão criada (a API preenche `id` e `data`) |
 
-## Tabelas sugeridas no Supabase
-- `contatos` (id uuid, nome text, parentesco text, telefone text)
-- `rotina` (id uuid, nome text, repeticoes int, ativo bool)
-- `sessoes` (id uuid, exercicio text, repeticoes int, data timestamptz default now())
-
-Chaves do Supabase vão em `.env.local` (já está no `.gitignore`). **Nunca** commitar chave.
+## Banco (Supabase)
+- Tabelas, regras de segurança (RLS) e dados de exemplo: `supabase/schema.sql`. Cole no SQL Editor e rode.
+  - `contatos` e `rotina`: CRUD completo.
+  - `sessoes`: só leitura e criação. O histórico não pode ser alterado nem apagado.
+- Conexão: `src/lib/supabase.js`. Os services usam `tabela()` e `consultar()`, que transformam o erro técnico na mensagem do contrato.
+- Chaves: copie `.env.example` para `.env.local` (já está no `.gitignore`) e, na Vercel, cadastre as mesmas variáveis em Settings → Environment Variables.
+  - Use **só a chave pública** (publishable/anon). **Nunca** a secret/service_role, e nunca commite chave.

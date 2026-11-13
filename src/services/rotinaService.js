@@ -1,39 +1,32 @@
-import { esperar, novoId } from "./_fake";
+import { consultar, tabela } from "@/lib/supabase";
 
 /**
  * CONTRATO — rotina de exercícios definida pela família (CRUD)
  * Formato: { id, nome, repeticoes, ativo }
- *
- * >>> Parte da API/Supabase: substituir SOMENTE o corpo das funções. <<<
+ * Banco: tabela `rotina` (supabase/schema.sql).
  */
-let rotina = [
-  { id: "r1", nome: "Elevação dos braços", repeticoes: 10, ativo: true },
-  { id: "r2", nome: "Sentar e levantar da cadeira", repeticoes: 8, ativo: true },
-  { id: "r3", nome: "Marcha parada, sentado", repeticoes: 20, ativo: false },
-];
+const CAMPOS = "id, nome, repeticoes, ativo";
 
 export async function listar() {
-  await esperar();
-  return [...rotina];
+  return consultar(tabela("rotina").select(CAMPOS).order("criado_em"), "Não foi possível carregar a rotina.");
 }
 
 export async function criar({ nome, repeticoes, ativo = true }) {
-  await esperar();
-  const novo = { id: novoId(), nome, repeticoes: Number(repeticoes), ativo };
-  rotina = [...rotina, novo];
-  return novo;
+  return consultar(
+    tabela("rotina").insert({ nome, repeticoes: Number(repeticoes), ativo }).select(CAMPOS).single(),
+    "Não foi possível salvar o exercício. As repetições vão de 1 a 100."
+  );
 }
 
-export async function atualizar(id, dados) {
-  await esperar();
-  if (!rotina.some((r) => r.id === id)) throw new Error("Exercício não encontrado.");
-  rotina = rotina.map((r) =>
-    r.id === id ? { ...r, ...dados, id, repeticoes: Number(dados.repeticoes ?? r.repeticoes) } : r
+// Pode receber só parte dos campos (ex.: { ativo }). Campo ausente não é alterado.
+export async function atualizar(id, { nome, repeticoes, ativo }) {
+  const dados = { nome, ativo, repeticoes: repeticoes === undefined ? undefined : Number(repeticoes) };
+  return consultar(
+    tabela("rotina").update(dados).eq("id", id).select(CAMPOS).single(),
+    "Não foi possível atualizar o exercício."
   );
-  return rotina.find((r) => r.id === id);
 }
 
 export async function excluir(id) {
-  await esperar();
-  rotina = rotina.filter((r) => r.id !== id);
+  await consultar(tabela("rotina").delete().eq("id", id), "Não foi possível excluir o exercício.");
 }

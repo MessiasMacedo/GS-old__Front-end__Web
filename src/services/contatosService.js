@@ -1,38 +1,31 @@
-import { esperar, novoId } from "./_fake";
+import { consultar, tabela } from "@/lib/supabase";
 
 /**
  * CONTRATO — contatos da família (CRUD)
  * Formato: { id, nome, parentesco, telefone }
  * Todas as funções são assíncronas. Em erro, lançam Error com mensagem legível.
- *
- * >>> Parte da API/Supabase: substituir SOMENTE o corpo das funções. <<<
+ * Banco: tabela `contatos` (supabase/schema.sql).
  */
-let contatos = [
-  { id: "c1", nome: "Ana", parentesco: "Filha", telefone: "(11) 98765-4321" },
-  { id: "c2", nome: "Pedro", parentesco: "Neto", telefone: "(11) 91234-5678" },
-];
+const CAMPOS = "id, nome, parentesco, telefone";
 
 export async function listar() {
-  await esperar();
-  return [...contatos];
+  return consultar(tabela("contatos").select(CAMPOS).order("criado_em"), "Não foi possível carregar os contatos.");
 }
 
 export async function criar({ nome, parentesco, telefone }) {
-  await esperar();
-  const novo = { id: novoId(), nome, parentesco, telefone };
-  contatos = [...contatos, novo];
-  return novo;
+  return consultar(
+    tabela("contatos").insert({ nome, parentesco, telefone }).select(CAMPOS).single(),
+    "Não foi possível salvar o contato. Confira o nome."
+  );
 }
 
-export async function atualizar(id, dados) {
-  await esperar();
-  const existe = contatos.some((c) => c.id === id);
-  if (!existe) throw new Error("Contato não encontrado.");
-  contatos = contatos.map((c) => (c.id === id ? { ...c, ...dados, id } : c));
-  return contatos.find((c) => c.id === id);
+export async function atualizar(id, { nome, parentesco, telefone }) {
+  return consultar(
+    tabela("contatos").update({ nome, parentesco, telefone }).eq("id", id).select(CAMPOS).single(),
+    "Não foi possível atualizar o contato."
+  );
 }
 
 export async function excluir(id) {
-  await esperar();
-  contatos = contatos.filter((c) => c.id !== id);
+  await consultar(tabela("contatos").delete().eq("id", id), "Não foi possível remover o contato.");
 }

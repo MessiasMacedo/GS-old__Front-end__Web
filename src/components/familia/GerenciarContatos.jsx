@@ -39,7 +39,7 @@ export default function GerenciarContatos({ colecao }) {
                 <FormContato inicial={c} onSalvar={salvar} onCancelar={() => setEditando(null)} />
               </li>
             ) : (
-              <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl ring-1 ring-old-azul/10 px-4 py-3 text-old-azul">
+              <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-old-azul-claro/50 px-4 py-3 text-old-azul">
                 <span>
                   <span className="block text-lg font-bold">{c.nome} <span className="font-normal">· {c.parentesco}</span></span>
                   <span className="text-old-azul/75">{c.telefone}</span>

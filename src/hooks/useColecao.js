@@ -20,8 +20,9 @@ export function useColecao(service) {
     }
   }, []);
 
-  const recarregar = useCallback(async () => {
-    setCarregando(true);
+  // silencioso: atualiza sem trocar a lista por "Carregando…" (ex.: atualização ao vivo)
+  const recarregar = useCallback(async ({ silencioso = false } = {}) => {
+    if (!silencioso) setCarregando(true);
     const lista = await executar(() => service.listar());
     if (lista) setItens(lista);
     setCarregando(false);

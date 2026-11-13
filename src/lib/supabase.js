@@ -13,6 +13,21 @@ export function tabela(nome) {
 }
 
 /**
+ * Avisa a cada linha nova na tabela (Supabase Realtime), sem recarregar a página.
+ * `aoMudarConexao(true/false)` diz se a escuta está ativa. Devolve a função que desliga.
+ */
+export function ouvirInsercoes(nome, aoInserir, aoMudarConexao) {
+  if (!supabase) return () => {};
+  const canal = supabase
+    .channel(`ao-vivo-${nome}`)
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: nome }, (mudanca) => aoInserir(mudanca.new))
+    .subscribe((status) => aoMudarConexao?.(status === "SUBSCRIBED"));
+  return () => {
+    supabase.removeChannel(canal);
+  };
+}
+
+/**
  * Executa a consulta e devolve os dados. Em erro, guarda o detalhe técnico no console
  * (para quem programa) e lança a mensagem simples que o contrato promete à família.
  */

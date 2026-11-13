@@ -29,7 +29,7 @@ export default function GerenciarRotina({ colecao }) {
             editando === r.id ? (
               <li key={r.id}><FormExercicio inicial={r} onSalvar={salvar} onCancelar={() => setEditando(null)} /></li>
             ) : (
-              <li key={r.id} className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3 ring-1 ring-old-azul/10 text-old-azul ${r.ativo ? "" : "opacity-60"}`}>
+              <li key={r.id} className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-old-azul-claro/50 px-4 py-3 text-old-azul ${r.ativo ? "" : "opacity-60"}`}>
                 <span>
                   <span className="block text-lg font-bold">{r.nome}</span>
                   <span className="text-old-azul/75">{r.repeticoes} repetições · {r.ativo ? "ativo" : "pausado"}</span>

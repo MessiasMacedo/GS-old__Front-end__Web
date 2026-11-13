@@ -83,6 +83,17 @@
   - uma sessão criada apareceu no painel e entrou no resumo da semana.
 - **Erro encontrado no teste e corrigido:** o Supabase dá todas as permissões ao papel público em tabelas novas, então o `grant` não impedia apagar sessões. A RLS segurava (0 linhas alteradas), mas era a única trava. Foi acrescentado um `revoke update, delete` nas sessões.
 
+### Etapa 12 — Painel da família redesenhado e ao vivo (Claude Code)
+- **Prompt (resumo):** fazer o front do painel da família junto com o Supabase.
+- **Análise da IA:** os dados já estavam ligados ao banco pelos services; o que faltava era o visual e uma resposta rápida para a pergunta de quem abre o painel: "ela está bem?".
+- **Gerado:**
+  - Topo em azul, igual à Home, com uma frase calculada a partir dos registros (`situacao()`: "se exercitou hoje", "ontem", "3 dias sem exercício").
+  - A semana em bolinhas (`semana()`), na mesma linguagem visual da prévia da Home.
+  - O histórico agrupado por dia ("Hoje", "Ontem", "segunda-feira, 9 de nov.").
+  - Os cartões no estilo da tela da Lumi.
+  - **Atualização ao vivo** com o Supabase Realtime: hook `useAoVivo` mais `ouvirInsercoes()`. A sessão que a Lumi grava no tablet aparece no painel sem recarregar, e chega destacada em verde.
+- **Correção encontrada pelo teste:** a frase do topo e o alerta contavam os dias de jeitos diferentes (dias de calendário × horas/24) e podiam discordar por 1. As duas passaram a usar `diasEntre()`, coberto por `src/lib/alertas.check.js`.
+
 ## Aplicação no projeto
 - [preencher: quais arquivos foram gerados, quais vocês alteraram]
 

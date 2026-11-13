@@ -7,22 +7,25 @@ import BotaoAcao from "@/components/lumi/BotaoAcao";
 import AvisoSemSuporte from "@/components/lumi/AvisoSemSuporte";
 import TelaExercicio from "@/components/lumi/TelaExercicio";
 import AlertaQueda from "@/components/lumi/AlertaQueda";
+import TelaFamilia from "@/components/lumi/TelaFamilia";
 import { IconeExercicios, IconeFamilia } from "@/components/lumi/Icones";
 
 import { useLumi } from "@/hooks/useLumi";
 import { useSaudacao } from "@/hooks/useSaudacao";
 import { useColecao } from "@/hooks/useColecao";
 import * as rotinaService from "@/services/rotinaService";
+import * as contatosService from "@/services/contatosService";
 import { PERFIL_DEMO } from "@/lib/config";
 
 export default function Lumi() {
   const { saudacao, hora, data } = useSaudacao();
   const rotina = useColecao(rotinaService);
+  const contatos = useColecao(contatosService); // os mesmos contatos do painel da família
 
   // ponytail: sugestão provisória = 1º exercício ativo da rotina.
   // Na próxima etapa quem escolhe é lib/proximaSugestao.js (hora, histórico, rotina).
   const sugestao = rotina.itens.find((r) => r.ativo);
-  const lumi = useLumi({ sugestao });
+  const lumi = useLumi({ sugestao, contatos: contatos.itens });
 
   const exercitar = () =>
     sugestao ? lumi.comecarExercicio(sugestao) : lumi.dizer("Ainda não tem exercício na sua rotina. A sua família pode montar uma pelo painel.");
@@ -71,10 +74,19 @@ export default function Lumi() {
               descricao="Falar com quem você ama"
               Icone={IconeFamilia}
               cor="ciano"
-              onClick={() => lumi.dizer("Logo vou poder te ajudar a falar com a sua família.")}
+              onClick={lumi.abrirFamilia}
             />
           </nav>
         </>
+      ) : lumi.modo === "familia" ? (
+        <TelaFamilia
+          contatos={contatos.itens}
+          ligandoPara={lumi.ligandoPara}
+          lumi={lumi}
+          onLigar={lumi.ligarPara}
+          onDesligar={lumi.desligar}
+          onVoltar={lumi.sairDaFamilia}
+        />
       ) : (
         <TelaExercicio
           key={lumi.exercicio?.id ?? "demonstracao"}

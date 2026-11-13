@@ -15,7 +15,7 @@ const INTENCOES = [
   // "Não" antes dos assuntos: "não quero exercício" é recusa, não pedido.
   ["nao", /^(nao|agora nao|depois|mais tarde)\b/],
   ["exercicio", /\b(exercic|alonga|mexer|ginastica|movimentar|treino)/],
-  ["familia", /\b(familia|filh|net[oa]|ligar|saudade)/],
+  ["familia", /\b(familia|filh|net[oa]|saudade|lig(a|ar|ue)\b)/], // "liga pro Pedro", "ligue pra Ana"
   // "Sim" depois dos assuntos: "quero fazer exercício" é pedido, não só um sim.
   ["sim", /^(sim|claro|quero|pode|vamos|bora|ok|uhum|aham|isso|com certeza)\b/],
   ["horas", /\b(que horas|hora[s]? (e|sao))\b/],
@@ -28,6 +28,28 @@ const INTENCOES = [
 // nem sempre acerta acento, então a comparação ignora acentos e maiúsculas.
 export const normalizar = (texto) =>
   texto.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").trim();
+
+const palavraInteira = (texto, palavra) =>
+  new RegExp(`\\b${palavra.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(texto);
+
+/**
+ * Qual contato da família a pessoa citou: pelo primeiro nome ("liga pra Ana")
+ * ou pelo parentesco ("minha filha"). Os contatos vêm do painel (Supabase).
+ */
+export function acharContato(texto, contatos) {
+  const t = normalizar(texto);
+  return (
+    contatos.find((c) => palavraInteira(t, normalizar(c.nome).split(" ")[0])) ??
+    contatos.find((c) => c.parentesco && palavraInteira(t, normalizar(c.parentesco))) ??
+    null
+  );
+}
+
+/** "Ana", "Ana ou Pedro", "Ana, Pedro ou João": do jeito que se fala. */
+export function juntarNomes(contatos) {
+  const nomes = contatos.map((c) => c.nome);
+  return nomes.length < 2 ? (nomes[0] ?? "") : `${nomes.slice(0, -1).join(", ")} ou ${nomes.at(-1)}`;
+}
 
 /** Retorna o tipo da intenção, ou "conversa" quando nenhuma regra bate. */
 export function detectarIntencao(texto) {

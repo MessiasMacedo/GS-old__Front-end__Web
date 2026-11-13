@@ -1,6 +1,6 @@
 // Checagem rápida das intenções: `npm run check`. Falha alto se alguma regra quebrar.
 import assert from "node:assert/strict";
-import { detectarIntencao } from "./intencoes.js";
+import { acharContato, detectarIntencao, juntarNomes } from "./intencoes.js";
 
 const casos = {
   "Eu caí no banheiro": "seguranca",
@@ -16,6 +16,9 @@ const casos = {
   "minha vizinha caiu": "seguranca",
   "vamos alongar": "exercicio",
   "quero ligar para minha filha": "familia",
+  "liga pro Pedro": "familia",
+  "ligue para a Ana": "familia",
+  "a ligação caiu": "seguranca", // "caiu" ganha: na dúvida, a Lumi pergunta se está tudo bem
   "que horas são?": "horas",
   "tudo bem com você?": "comoVai",
   "Olá, Lumi": "cumprimento",
@@ -29,4 +32,17 @@ const casos = {
 for (const [frase, esperado] of Object.entries(casos)) {
   assert.equal(detectarIntencao(frase), esperado, `"${frase}"`);
 }
-console.log(`intencoes: ${Object.keys(casos).length} casos ok`);
+// Achar o contato da família citado na fala
+const contatos = [
+  { nome: "Ana", parentesco: "Filha" },
+  { nome: "Pedro Henrique", parentesco: "Neto" },
+];
+assert.equal(acharContato("liga pra Ana", contatos)?.nome, "Ana");
+assert.equal(acharContato("quero falar com o pedro", contatos)?.nome, "Pedro Henrique");
+assert.equal(acharContato("minha filha", contatos)?.nome, "Ana");
+assert.equal(acharContato("o meu NETO", contatos)?.nome, "Pedro Henrique");
+assert.equal(acharContato("comprei banana", contatos), null, "'ana' dentro de banana não conta");
+assert.equal(juntarNomes(contatos), "Ana ou Pedro Henrique");
+assert.equal(juntarNomes([...contatos, { nome: "João" }]), "Ana, Pedro Henrique ou João");
+
+console.log(`intencoes: ${Object.keys(casos).length} casos e contatos ok`);

@@ -94,6 +94,33 @@
   - **Atualização ao vivo** com o Supabase Realtime: hook `useAoVivo` mais `ouvirInsercoes()`. A sessão que a Lumi grava no tablet aparece no painel sem recarregar, e chega destacada em verde.
 - **Correção encontrada pelo teste:** a frase do topo e o alerta contavam os dias de jeitos diferentes (dias de calendário × horas/24) e podiam discordar por 1. As duas passaram a usar `diasEntre()`, coberto por `src/lib/alertas.check.js`.
 
+### Etapa 13 — Queda mais confiável, ligação para a família e exercício "desconhecido" (Claude Code)
+- **Prompt (resumo):**
+  - Deitado no chão no modo demonstração, a Lumi continuava dizendo que estava tudo certo.
+  - O botão "Minha família" não fazia nada; a Lumi devia perguntar para quem ligar e mostrar uma tela de ligação fictícia.
+  - Um exercício inventado no CRUD, a câmera saberia conferir?
+- **Diagnóstico da IA (detector):**
+  - A regra só disparava com queda RÁPIDA; quem deitou devagar ou já estava no chão nunca virava alerta.
+  - "Deitado" olhava só a linha ombro → quadril, que engana quando a pessoa deita em direção à câmera.
+  - Um único quadro tremido do MediaPipe zerava o estado.
+- **Gerado:**
+  - Detector:
+    - "deitado" também quando o corpo (sem os braços) fica mais largo que alto;
+    - decisão pela maioria dos quadros, e não por um só;
+    - ficar parado no chão por 8 s vira alerta, não importa como a pessoa chegou lá;
+    - cair e sumir da câmera também vira alerta;
+    - novo estado "Deitado" na tela.
+  - Família:
+    - a pergunta pendente passou a aceitar qualquer resposta (antes só sim/não), e `acharContato()` reconhece o nome ("Ana") ou o parentesco ("minha filha") usando os contatos do CRUD;
+    - novo componente `TelaFamilia`: os contatos em cartões grandes e a tela de chamada, que avisa que é demonstração.
+  - Exercício que a câmera não conhece: a Lumi avisa e aparece o botão "Fiz mais uma"; no painel, o campo sugere os nomes que a câmera confere (`<datalist>` nativo).
+- **Validação:**
+  - 4 casos novos no detector (já no chão, quadro tremido, deitado de lado, braços abertos);
+  - as 7 fotos reais do site continuam "em pé/sentado";
+  - fluxo de voz testado: "a minha filha" chama a Ana e "liga pro Pedro" liga direto.
+  - O teste também achou um bug: "liga" e "ligue" não eram reconhecidos (só "ligar").
+  - Falta calibrar com câmera real no chão.
+
 ## Aplicação no projeto
 - [preencher: quais arquivos foram gerados, quais vocês alteraram]
 

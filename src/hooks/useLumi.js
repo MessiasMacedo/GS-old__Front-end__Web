@@ -1,7 +1,8 @@
 import { useCallback, useRef, useState } from "react";
 import { useConversa } from "./useConversa";
-import { detectarIntencao } from "@/lib/intencoes";
+import { acharContato, detectarIntencao, juntarNomes } from "@/lib/intencoes";
 import { respostaLocal, RESPOSTA_SEGURANCA } from "@/lib/respostaLocal";
+import { tipoDeMovimento } from "@/lib/movimento";
 import * as sessoesService from "@/services/sessoesService";
 
 // ponytail: "avisar a família" ainda é só fala e tela. O aviso de verdade precisa de um
@@ -9,27 +10,62 @@ import * as sessoesService from "@/services/sessoesService";
 const CHAMAR_AJUDA = "Não estou vendo você se mexer. Vou avisar a sua família. Se for urgente, ligue para o SAMU, no 192.";
 
 const convite = (ex) =>
-  `Que bom! Fico muito feliz de ouvir isso. Vamos começar com ${ex.nome.toLowerCase()}, ${ex.repeticoes} vezes. Fique de frente para a câmera.`;
+  `Que bom! Fico muito feliz de ouvir isso. Vamos começar com ${ex.nome.toLowerCase()}, ${ex.repeticoes} vezes. ` +
+  (tipoDeMovimento(ex.nome)
+    ? "Fique de frente para a câmera."
+    : "Esse eu ainda não sei conferir pela câmera, então toque em Fiz mais uma a cada vez.");
+
+// Pergunta de sim ou não: devolve null para qualquer outra resposta (aí a fala segue o fluxo normal)
+const simOuNao = ({ sim, nao }) => (intencao) => (intencao === "sim" ? sim() : intencao === "nao" ? nao() : null);
 
 /**
  * useLumi — o cérebro da tela do tablet (camada 1, local).
  * Guarda em que modo a Lumi está e qual pergunta ela deixou no ar, e decide
  * o que fazer com cada fala. A tela só mostra e chama estas funções.
  *
- * modo: "conversa" | "exercicio" | "demonstracao"
+ * modo: "conversa" | "exercicio" | "demonstracao" | "familia"
  */
-export function useLumi({ sugestao }) {
+export function useLumi({ sugestao, contatos = [] }) {
   const [modo, setModo] = useState("conversa");
   const [exercicio, setExercicio] = useState(null);
+  const [ligandoPara, setLigandoPara] = useState(null);
   const [alerta, setAlerta] = useState(false);
-  // Pergunta no ar: { sim: () => resposta, nao: () => resposta }. Dá sentido ao "sim" e ao "não".
+  // Pergunta no ar: (intencao, texto) => resposta | null. Dá sentido a "sim", "não" e "a Ana".
   const pendenteRef = useRef(null);
 
   const voltarParaConversa = useCallback(() => {
     setModo("conversa");
     setExercicio(null);
+    setLigandoPara(null);
   }, []);
 
+  // ---------- Família: os contatos vêm do CRUD do painel ----------
+  const ligar = useCallback((contato) => {
+    setModo("familia");
+    setLigandoPara(contato);
+    return `Ligando para ${contato.nome}${contato.parentesco ? `, ${contato.parentesco.toLowerCase()}` : ""}.`;
+  }, []);
+
+  const perguntarQuem = useCallback(() => {
+    if (contatos.length === 0)
+      return "Ainda não tem ninguém na sua lista. A sua família pode cadastrar os contatos pelo painel.";
+    setModo("familia");
+    setLigandoPara(null);
+    const escolher = (intencao, texto) => {
+      if (intencao === "nao") {
+        voltarParaConversa();
+        return "Tudo bem! Quando quiser falar com alguém, é só me chamar.";
+      }
+      const contato = acharContato(texto, contatos);
+      if (contato) return ligar(contato);
+      pendenteRef.current = escolher; // não entendeu o nome: pergunta de novo
+      return { texto: `Não achei esse nome. Quer ligar para ${juntarNomes(contatos)}?`, perguntar: true };
+    };
+    pendenteRef.current = escolher;
+    return { texto: `Para quem você quer ligar? ${juntarNomes(contatos)}?`, perguntar: true };
+  }, [contatos, ligar, voltarParaConversa]);
+
+  // ---------- O que fazer com cada fala ----------
   const responder = useCallback(
     (texto) => {
       const intencao = detectarIntencao(texto);
@@ -38,15 +74,21 @@ export function useLumi({ sugestao }) {
 
       if (intencao === "seguranca") {
         setAlerta(true);
-        pendenteRef.current = {
+        pendenteRef.current = simOuNao({
           sim: () => "Certo, vou avisar a sua família. Se for urgente, ligue para o SAMU, no 192.",
           nao: () => "Tudo bem. Estou aqui do seu lado se precisar.",
-        };
+        });
         return { texto: RESPOSTA_SEGURANCA, perguntar: true };
       }
-      if (pendente && intencao === "sim") return pendente.sim();
-      if (pendente && intencao === "nao") return pendente.nao();
 
+      const resposta = pendente?.(intencao, texto);
+      if (resposta) return resposta;
+
+      if (intencao === "familia") {
+        // "liga pra Ana" já diz quem; "quero falar com a família" ainda não
+        const contato = acharContato(texto, contatos);
+        return contato ? ligar(contato) : perguntarQuem();
+      }
       if (intencao === "exercicio") {
         if (!sugestao) return "Ainda não tem exercício na sua rotina. A sua família pode montar uma pelo painel.";
         setExercicio(sugestao);
@@ -60,12 +102,29 @@ export function useLumi({ sugestao }) {
       }
       return respostaLocal(texto);
     },
-    [sugestao]
+    [sugestao, contatos, ligar, perguntarQuem]
   );
 
   const conversa = useConversa({ responder });
   const { dizer } = conversa;
 
+  const abrirFamilia = useCallback(() => dizer(perguntarQuem()), [dizer, perguntarQuem]);
+
+  const ligarPara = useCallback((contato) => dizer(ligar(contato)), [dizer, ligar]);
+
+  const desligar = useCallback(() => {
+    pendenteRef.current = null;
+    voltarParaConversa();
+    dizer("Que bom que vocês se falaram! Quando quiser, é só me chamar.");
+  }, [voltarParaConversa, dizer]);
+
+  const sairDaFamilia = useCallback(() => {
+    pendenteRef.current = null;
+    voltarParaConversa();
+    dizer("Tudo bem! Quando quiser falar com alguém, é só me chamar.");
+  }, [voltarParaConversa, dizer]);
+
+  // ---------- Exercício ----------
   const comecarExercicio = useCallback(
     (ex) => {
       setExercicio(ex);
@@ -105,7 +164,7 @@ export function useLumi({ sugestao }) {
   );
 
   const aoCair = useCallback(() => {
-    pendenteRef.current = {
+    pendenteRef.current = simOuNao({
       sim: () => {
         voltarParaConversa();
         return "Que alívio! Vamos parar por hoje. Levante devagar e descanse um pouco.";
@@ -114,7 +173,7 @@ export function useLumi({ sugestao }) {
         setAlerta(true);
         return "Fique onde está. Vou avisar a sua família. Se for urgente, ligue para o SAMU, no 192.";
       },
-    };
+    });
     dizer({ texto: "Parece que você caiu. Você está bem?", perguntar: true });
   }, [voltarParaConversa, dizer]);
 
@@ -132,7 +191,8 @@ export function useLumi({ sugestao }) {
 
   return {
     ...conversa,
-    modo, exercicio, alerta,
+    modo, exercicio, ligandoPara, alerta,
+    abrirFamilia, ligarPara, desligar, sairDaFamilia,
     comecarExercicio, terminarExercicio, aoRepetir, aoCair, aoFicarParado, fecharAlerta,
   };
 }

@@ -17,7 +17,8 @@ export default function BotaoVoz({ estado, onOuvir, onParar, desabilitado }) {
       aria-label={rotulo}
       className="relative rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
     >
-      <LumiRosto estado={estado} className="w-44 sm:w-56 lg:w-72" />
+      {/* tamanho também limitado pela ALTURA da tela: não empurra o resto para fora em tela baixa */}
+      <LumiRosto estado={estado} className="w-[min(11rem,30dvh)] sm:w-[min(14rem,34dvh)] lg:w-[min(18rem,42dvh)]" />
       <span
         className="absolute bottom-[4%] right-[4%] flex items-center justify-center
                    size-16 rounded-full bg-old-azul text-white shadow-lg ring-[6px] ring-white"

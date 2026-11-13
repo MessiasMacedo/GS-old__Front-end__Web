@@ -5,10 +5,6 @@ const base = {
   "aria-hidden": true,
 };
 
-export const IconeConversar = () => (
-  <svg {...base}><path d="M4 5h16v11H9l-5 4z" /><path d="M8 10h8M8 13h5" /></svg>
-);
-
 export const IconeExercicios = () => (
   <svg {...base}>
     <circle cx="12" cy="4.5" r="2" />

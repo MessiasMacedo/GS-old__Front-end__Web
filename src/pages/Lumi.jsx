@@ -1,16 +1,13 @@
-import { useState } from "react";
-
 import BarraTopo from "@/components/lumi/BarraTopo";
 import Saudacao from "@/components/lumi/Saudacao";
 import BotaoVoz from "@/components/lumi/BotaoVoz";
 import StatusLumi from "@/components/lumi/StatusLumi";
 import BalaoFala from "@/components/lumi/BalaoFala";
 import BotaoAcao from "@/components/lumi/BotaoAcao";
-import CartaoSugestao from "@/components/lumi/CartaoSugestao";
 import AvisoSemSuporte from "@/components/lumi/AvisoSemSuporte";
 import TelaExercicio from "@/components/lumi/TelaExercicio";
 import AlertaQueda from "@/components/lumi/AlertaQueda";
-import { IconeConversar, IconeExercicios, IconeFamilia } from "@/components/lumi/Icones";
+import { IconeExercicios, IconeFamilia } from "@/components/lumi/Icones";
 
 import { useLumi } from "@/hooks/useLumi";
 import { useSaudacao } from "@/hooks/useSaudacao";
@@ -21,7 +18,6 @@ import { PERFIL_DEMO } from "@/lib/config";
 export default function Lumi() {
   const { saudacao, hora, data } = useSaudacao();
   const rotina = useColecao(rotinaService);
-  const [sugestaoDispensada, setSugestaoDispensada] = useState(false);
 
   // ponytail: sugestão provisória = 1º exercício ativo da rotina.
   // Na próxima etapa quem escolhe é lib/proximaSugestao.js (hora, histórico, rotina).
@@ -40,9 +36,9 @@ export default function Lumi() {
 
       {lumi.modo === "conversa" ? (
         <>
-          <section className="relative mx-auto grid min-h-0 w-full max-w-7xl flex-1 items-center gap-8 overflow-y-auto px-6 py-4 lg:grid-cols-[1fr_1.05fr] md:px-10">
-            {/* Esquerda: a Lumi e a conversa */}
-            <div className="flex flex-col items-center gap-5">
+          {/* Só o essencial: a Lumi (que é o botão de falar), a conversa e 2 caminhos grandes */}
+          <section className="relative mx-auto grid min-h-0 w-full max-w-6xl flex-1 items-center [align-content:safe_center] gap-6 overflow-y-auto px-6 py-4 md:px-10 lg:grid-cols-[auto_1fr] lg:gap-16">
+            <div className="flex flex-col items-center gap-4">
               <BotaoVoz
                 estado={lumi.estado}
                 onOuvir={lumi.ouvir}
@@ -50,50 +46,31 @@ export default function Lumi() {
                 desabilitado={!lumi.suportaOuvir}
               />
               <StatusLumi estado={lumi.estado} erro={lumi.erro} />
-              <div className="flex w-full flex-col gap-3">
+            </div>
+
+            <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 lg:mx-0">
+              <Saudacao saudacao={saudacao} nome={PERFIL_DEMO.nome} data={data} />
+              {!lumi.suportaOuvir && <AvisoSemSuporte />}
+              <div className="flex flex-col gap-3">
                 <BalaoFala autor="usuario" texto={lumi.falaUsuario} />
                 <BalaoFala autor="lumi" texto={lumi.falaLumi} />
               </div>
             </div>
-
-            {/* Direita: onde a pessoa está no dia e o que a Lumi propõe */}
-            <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 lg:max-w-none">
-              <Saudacao saudacao={saudacao} nome={PERFIL_DEMO.nome} data={data} />
-              {!lumi.suportaOuvir && <AvisoSemSuporte />}
-              {sugestao && !sugestaoDispensada && (
-                <CartaoSugestao
-                  titulo={sugestao.nome}
-                  detalhe={`${sugestao.repeticoes} vezes, no seu ritmo`}
-                  onAceitar={exercitar}
-                  onRecusar={() => {
-                    setSugestaoDispensada(true);
-                    lumi.dizer("Tudo bem! Fica para mais tarde. Quando quiser, é só me chamar.");
-                  }}
-                />
-              )}
-            </div>
           </section>
 
-          <nav aria-label="O que você quer fazer" className="relative mx-auto grid w-full max-w-7xl grid-cols-3 gap-3 px-4 pb-4 pt-2 sm:gap-4 sm:px-6 sm:pb-6 md:px-10">
-            <BotaoAcao
-              titulo="Conversar"
-              descricao="Bater um papo com a Lumi"
-              Icone={IconeConversar}
-              cor="verde"
-              onClick={lumi.suportaOuvir ? lumi.ouvir : () => lumi.dizer("Para conversar por voz, abra a Lumi no Google Chrome.")}
-            />
+          <nav aria-label="O que você quer fazer" className="relative mx-auto grid w-full max-w-6xl grid-cols-2 gap-3 px-4 pb-4 pt-2 sm:gap-5 sm:px-6 sm:pb-6 md:px-10">
             <BotaoAcao
               titulo="Exercícios"
-              descricao="Movimentar o corpo"
+              descricao={sugestao ? `${sugestao.nome}, ${sugestao.repeticoes} vezes` : "Movimentar o corpo"}
               Icone={IconeExercicios}
-              cor="ciano"
+              cor="verde"
               onClick={exercitar}
             />
             <BotaoAcao
               titulo="Minha família"
               descricao="Falar com quem você ama"
               Icone={IconeFamilia}
-              cor="branco"
+              cor="ciano"
               onClick={() => lumi.dizer("Logo vou poder te ajudar a falar com a sua família.")}
             />
           </nav>

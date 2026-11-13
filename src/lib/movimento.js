@@ -15,7 +15,13 @@ export const AJUSTES = {
   PARADO_MS: 8000, // tempo no chão sem se mexer até a Lumi chamar ajuda
   PARADO_TOLERANCIA: 0.04, // respiração e ruído da câmera não contam como movimento
   BRACO_BAIXO: 0.15, // punho tem que descer isso abaixo do ombro para contar "embaixo"
+  PROPORCAO_IMAGEM: 4 / 3, // a câmera é pedida em 640x480; x e y vêm de 0 a 1 cada um
+  DEITADO_LARGURA: 1.2, // corpo (sem os braços) mais largo que alto, nessa proporção = deitado
 };
+
+// Cabeça, ombros, quadril, joelhos e tornozelos. Sem os braços: braços abertos no
+// exercício deixariam o corpo "largo" e pareceria deitado.
+const SEM_BRACOS = [0, 11, 12, 23, 24, 25, 26, 27, 28];
 
 const medio = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
 
@@ -60,33 +66,50 @@ export function contarRepeticao({ fase, total }, novaFase) {
   return { fase: novaFase, total: total + (fase === "cima" && novaFase === "baixo" ? 1 : 0) };
 }
 
-/** Resumo de um quadro para o detector de queda: altura do quadril e se o tronco está deitado. */
+/**
+ * Resumo de um quadro para o detector: altura do quadril e se o corpo parece deitado.
+ * Dois sinais, basta um: o tronco na horizontal OU o corpo mais largo que alto
+ * (o segundo pega quem deitou de lado para a câmera, onde o tronco "engana").
+ */
 export function amostraDoCorpo(p, t) {
   const ombros = medio(p[P.ombroE], p[P.ombroD]);
   const quadril = medio(p[P.quadrilE], p[P.quadrilD]);
-  return { t, y: quadril.y, deitado: Math.abs(ombros.y - quadril.y) < Math.abs(ombros.x - quadril.x) };
+  const k = AJUSTES.PROPORCAO_IMAGEM; // x vezes isto = mesma escala de y
+  const troncoDeitado = Math.abs(ombros.y - quadril.y) < Math.abs(ombros.x - quadril.x) * k;
+
+  const visiveis = SEM_BRACOS.map((i) => p[i]).filter((v) => (v.visibility ?? 1) > 0.5);
+  const xs = visiveis.map((v) => v.x);
+  const ys = visiveis.map((v) => v.y);
+  const corpoLargo =
+    visiveis.length >= 4 && (Math.max(...xs) - Math.min(...xs)) * k > (Math.max(...ys) - Math.min(...ys)) * AJUSTES.DEITADO_LARGURA;
+
+  return { t, y: quadril.y, deitado: troncoDeitado || corpoLargo };
 }
 
+const ultimos = (amostras, ms) => amostras.filter((a) => a.t >= amostras.at(-1).t - ms);
+const fracaoDeitado = (lista) => lista.filter((a) => a.deitado).length / lista.length;
+
 /**
- * "ok" -> "caiu" -> "parado". Não é diagnóstico: a câmera só sabe que o corpo
- * desceu rápido e ficou deitado, não o motivo. Por isso a Lumi PERGUNTA.
- * `amostras` em ordem de tempo, cobrindo pelo menos PARADO_MS.
+ * "ok" (em pé ou sentado) | "deitado" | "caiu" | "parado".
+ * Não é diagnóstico: a câmera só vê o corpo descer e ficar no chão, não o motivo.
+ * Por isso a Lumi PERGUNTA. Decide pela maioria dos quadros, não por um só:
+ * com o corpo no chão o MediaPipe treme, e um quadro errado não pode zerar o alerta.
  */
 export function estadoDoCorpo(anterior, amostras) {
   const atual = amostras.at(-1);
-  if (!atual.deitado) return "ok"; // levantou (ou nunca caiu)
+  if (fracaoDeitado(ultimos(amostras, 1000)) < 0.5) return "ok"; // levantou (ou nunca deitou)
+  if (anterior === "parado") return "parado";
 
-  if (anterior === "ok") {
-    const recentes = amostras.filter((a) => a.t >= atual.t - AJUSTES.QUEDA_JANELA_MS);
-    const desceu = atual.y - Math.min(...recentes.map((a) => a.y));
-    return desceu > AJUSTES.QUEDA_DESCIDA ? "caiu" : "ok"; // deitar devagar não é queda
-  }
+  // Parado no chão: quase só "deitado" e sem se mexer por PARADO_MS, NÃO IMPORTA como chegou lá
+  // (caiu fora da câmera, deitou devagar, a câmera ligou com a pessoa já no chão).
+  const janela = ultimos(amostras, AJUSTES.PARADO_MS);
+  const temTempo = janela[0].t <= atual.t - AJUSTES.PARADO_MS + 500;
+  const ys = janela.map((a) => a.y);
+  if (temTempo && fracaoDeitado(janela) >= 0.8 && Math.max(...ys) - Math.min(...ys) < AJUSTES.PARADO_TOLERANCIA)
+    return "parado";
 
-  if (anterior === "caiu") {
-    const janela = amostras.filter((a) => a.t >= atual.t - AJUSTES.PARADO_MS);
-    const temTempo = janela[0].t <= atual.t - AJUSTES.PARADO_MS + 500;
-    const ys = janela.map((a) => a.y);
-    if (temTempo && Math.max(...ys) - Math.min(...ys) < AJUSTES.PARADO_TOLERANCIA) return "parado";
-  }
-  return anterior;
+  if (anterior === "caiu") return "caiu";
+  const recentes = ultimos(amostras, AJUSTES.QUEDA_JANELA_MS);
+  const desceu = atual.y - Math.min(...recentes.map((a) => a.y));
+  return desceu > AJUSTES.QUEDA_DESCIDA ? "caiu" : "deitado"; // deitar devagar não é queda
 }

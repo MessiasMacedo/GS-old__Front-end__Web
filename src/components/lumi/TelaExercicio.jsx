@@ -7,7 +7,8 @@ import { useExercicio } from "@/hooks/useExercicio";
 import { tipoDeMovimento } from "@/lib/movimento";
 
 const CORPO = {
-  ok: { texto: "Tudo certo", cor: "bg-old-verde text-old-azul" },
+  ok: { texto: "Em pé ou sentado", cor: "bg-old-verde text-old-azul" },
+  deitado: { texto: "Deitado", cor: "bg-old-ciano text-old-azul" },
   caiu: { texto: "Queda percebida", cor: "bg-white text-old-azul" },
   parado: { texto: "Sem movimento", cor: "bg-white text-old-azul" },
 };
@@ -19,9 +20,10 @@ const CORPO = {
  * exercicio = null: modo demonstração (só o detector de queda).
  */
 export default function TelaExercicio({ exercicio, lumi, aoRepetir, aoCair, aoFicarParado, onParar }) {
-  const { total, corpo, aoDetectar } = useExercicio({ exercicio, aoRepetir, aoCair, aoFicarParado });
+  const { total, corpo, aoDetectar, contarNaMao } = useExercicio({ exercicio, aoRepetir, aoCair, aoFicarParado });
   const { videoRef, canvasRef, status, erro } = usePose(aoDetectar);
   const demo = !exercicio;
+  const movimento = demo ? null : tipoDeMovimento(exercicio.nome);
   const meta = exercicio?.repeticoes ?? 0;
 
   return (
@@ -62,6 +64,17 @@ export default function TelaExercicio({ exercicio, lumi, aoRepetir, aoCair, aoFi
             <div className="mt-2 h-5 overflow-hidden rounded-full bg-white ring-1 ring-old-azul/10">
               <div className="h-full rounded-full bg-old-verde transition-[width] duration-300" style={{ width: `${(total / meta) * 100}%` }} />
             </div>
+            {/* A câmera ainda não sabe conferir este exercício: quem conta é a pessoa.
+                A câmera continua ligada só para perceber uma queda. */}
+            {!movimento && (
+              <button
+                type="button"
+                onClick={contarNaMao}
+                className="mt-4 min-h-20 w-full rounded-2xl bg-old-verde text-2xl font-extrabold text-old-azul active:scale-[0.98]"
+              >
+                Fiz mais uma
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -88,7 +101,7 @@ export default function TelaExercicio({ exercicio, lumi, aoRepetir, aoCair, aoFi
           </p>
         ) : (
           <div className="hidden justify-center rounded-[2rem] bg-white py-4 shadow-md ring-1 ring-old-azul/10 sm:flex">
-            <FiguraExercicio movimento={tipoDeMovimento(exercicio.nome)} className="h-48 lg:h-64" />
+            <FiguraExercicio movimento={movimento} className="h-48 lg:h-64" />
           </div>
         )}
 

@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+// Vozes femininas em pt-BR, da mais natural para a menos. Cada navegador traz as suas:
+// Edge (vozes neurais da Microsoft), Chrome (Google), iPad/Mac (Apple), Windows antigo.
+const VOZES_PREFERIDAS = [/Francisca/i, /Thalita/i, /Google português/i, /Luciana/i, /Maria/i];
+
 /**
- * useVoz — encapsula reconhecimento de fala e voz sintetizada (Web Speech API).
+ * useVoz —encapsula reconhecimento de fala e voz sintetizada (Web Speech API).
  * Os componentes só recebem estado e funções; não sabem nada da API do navegador.
  *
  * estado: "parada" | "ouvindo" | "pensando" | "falando"
@@ -62,11 +66,14 @@ export function useVoz({ idioma = "pt-BR", aoOuvir } = {}) {
 
     reconhecimentoRef.current = rec;
 
-    // Escolhe uma voz em português quando a lista de vozes carregar
+    // Escolhe a voz quando a lista carregar. A primeira em português costuma ser
+    // uma voz antiga e robótica, então procuramos as femininas e naturais por nome.
     const escolherVoz = () => {
       const vozes = window.speechSynthesis?.getVoices() ?? [];
+      const doIdioma = vozes.filter((v) => v.lang?.replace("_", "-") === idioma);
       vozRef.current =
-        vozes.find((v) => v.lang === idioma) ??
+        VOZES_PREFERIDAS.map((nome) => doIdioma.find((v) => nome.test(v.name))).find(Boolean) ??
+        doIdioma[0] ??
         vozes.find((v) => v.lang?.startsWith("pt")) ??
         null;
     };

@@ -56,6 +56,14 @@ create policy "demo: ler sessoes" on sessoes for select to anon using (true);
 drop policy if exists "demo: criar sessoes" on sessoes;
 create policy "demo: criar sessoes" on sessoes for insert to anon with check (true);
 
+-- ============ AO VIVO (Realtime) ============
+-- O painel da família recebe cada sessão nova na hora, sem recarregar a página.
+-- (Respeita a RLS: só chega o que a chave pública pode ler.)
+do $$ begin
+  alter publication supabase_realtime add table sessoes;
+exception when duplicate_object then null; -- já estava ligado
+end $$;
+
 -- ============ DADOS DE EXEMPLO (só entram se a tabela estiver vazia) ============
 insert into contatos (nome, parentesco, telefone)
 select * from (values

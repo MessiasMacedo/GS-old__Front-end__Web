@@ -17,6 +17,11 @@ export const AJUSTES = {
   BRACO_BAIXO: 0.15, // punho tem que descer isso abaixo do ombro para contar "embaixo"
   PROPORCAO_IMAGEM: 4 / 3, // a câmera é pedida em 640x480; x e y vêm de 0 a 1 cada um
   DEITADO_LARGURA: 1.2, // corpo (sem os braços) mais largo que alto, nessa proporção = deitado
+  CONFIANCA_MINIMA: 0.6, // abaixo disso é "pessoa fantasma" (roupa no cabide, sombra): ignora
+  ENQUADRAR_MS: 800, // corpo inteiro visível por este tempo = pode começar
+  SUMIU_MS: 1500, // sem ninguém por este tempo = saiu da imagem (evita piscadas do MediaPipe)
+  BORDA_BAIXO: 0.72, // quadril abaixo desta altura da imagem ao sumir = saiu "por baixo"
+  SUMIU_ALERTA_MS: 15000, // sumiu por baixo e não voltou nem respondeu = chama ajuda
 };
 
 // Cabeça, ombros, quadril, joelhos e tornozelos. Sem os braços: braços abertos no
@@ -86,8 +91,40 @@ export function amostraDoCorpo(p, t) {
   return { t, y: quadril.y, deitado: troncoDeitado || corpoLargo };
 }
 
-const ultimos = (amostras, ms) => amostras.filter((a) => a.t >= amostras.at(-1).t - ms);
-const fracaoDeitado = (lista) => lista.filter((a) => a.deitado).length / lista.length;
+export const ultimos = (amostras, ms) => amostras.filter((a) => a.t >= amostras.at(-1).t - ms);
+export const fracaoDeitado = (lista) => lista.filter((a) => a.deitado).length / lista.length;
+
+const visivel = (v) => (v?.visibility ?? 1) > 0.5;
+
+// Cabeça, ombros e quadril. Sem as pernas: quem está sentado atrás de uma mesa tem as
+// pernas escondidas e continua sendo pessoa (testado nas fotos do site: 0,80 a 1,00).
+const TRONCO = [0, P.ombroE, P.ombroD, P.quadrilE, P.quadrilD];
+
+/** Quanto o MediaPipe confia que é uma pessoa: média da visibilidade de cabeça e tronco (0 a 1). */
+export const confianca = (p) => TRONCO.reduce((soma, i) => soma + (p[i].visibility ?? 1), 0) / TRONCO.length;
+
+/** Pessoa de verdade: confiança boa E ombros e quadril visíveis. Corta o "guarda-roupa em pé". */
+export const pessoaValida = (p) =>
+  confianca(p) >= AJUSTES.CONFIANCA_MINIMA && [P.ombroE, P.ombroD, P.quadrilE, P.quadrilD].every((i) => visivel(p[i]));
+
+/**
+ * Da cabeça aos pés dentro da imagem. Sem isso o chão fica fora do quadro e
+ * uma queda some pela borda de baixo: por isso a Lumi pede para enquadrar antes.
+ */
+export const corpoInteiro = (p) =>
+  [0, P.tornozeloE, P.tornozeloD].every((i) => visivel(p[i]) && p[i].y > 0.02 && p[i].y < 0.98);
+
+/**
+ * A pessoa acabou de sair da imagem. Saiu POR BAIXO (quadril perto da borda de baixo
+ * ou descendo rápido) = possível queda. Saiu pelo lado = foi a algum lugar.
+ * `amostras`: o que a câmera viu antes de a pessoa sumir.
+ */
+export function sumiuDescendo(amostras) {
+  if (amostras.length === 0) return false;
+  const ultima = amostras.at(-1);
+  const desceu = ultima.y - Math.min(...ultimos(amostras, AJUSTES.QUEDA_JANELA_MS).map((a) => a.y));
+  return ultima.y > AJUSTES.BORDA_BAIXO || desceu > AJUSTES.QUEDA_DESCIDA / 2;
+}
 
 /**
  * "ok" (em pé ou sentado) | "deitado" | "caiu" | "parado".
@@ -108,7 +145,8 @@ export function estadoDoCorpo(anterior, amostras) {
   if (temTempo && fracaoDeitado(janela) >= 0.8 && Math.max(...ys) - Math.min(...ys) < AJUSTES.PARADO_TOLERANCIA)
     return "parado";
 
-  if (anterior === "caiu") return "caiu";
+  // Já caiu, ou sumiu por baixo e voltou a aparecer deitado: é queda
+  if (anterior === "caiu" || anterior === "sumiu") return "caiu";
   const recentes = ultimos(amostras, AJUSTES.QUEDA_JANELA_MS);
   const desceu = atual.y - Math.min(...recentes.map((a) => a.y));
   return desceu > AJUSTES.QUEDA_DESCIDA ? "caiu" : "deitado"; // deitar devagar não é queda

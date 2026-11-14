@@ -1,9 +1,10 @@
 import { useCallback, useRef, useState } from "react";
 import { useConversa } from "./useConversa";
-import { acharContato, detectarIntencao, juntarNomes } from "@/lib/intencoes";
+import { acharContato, detectarIntencao, juntarNomes, limparDadosPessoais } from "@/lib/intencoes";
 import { respostaLocal, RESPOSTA_SEGURANCA } from "@/lib/respostaLocal";
 import { tipoDeMovimento } from "@/lib/movimento";
 import * as sessoesService from "@/services/sessoesService";
+import * as iaService from "@/services/iaService";
 
 // ponytail: "avisar a família" ainda é só fala e tela. O aviso de verdade precisa de um
 // alertasService no contrato com a API (Supabase); combinar com a parte do banco.
@@ -12,7 +13,7 @@ const CHAMAR_AJUDA = "Não estou vendo você se mexer. Vou avisar a sua família
 const convite = (ex) =>
   `Que bom! Fico muito feliz de ouvir isso. Vamos começar com ${ex.nome.toLowerCase()}, ${ex.repeticoes} vezes. ` +
   (tipoDeMovimento(ex.nome)
-    ? "Fique de frente para a câmera."
+    ? "Fique de frente para a câmera, com o corpo inteiro aparecendo, da cabeça aos pés."
     : "Esse eu ainda não sei conferir pela câmera, então toque em Fiz mais uma a cada vez.");
 
 // Pergunta de sim ou não: devolve null para qualquer outra resposta (aí a fala segue o fluxo normal)
@@ -32,6 +33,9 @@ export function useLumi({ sugestao, contatos = [] }) {
   const [alerta, setAlerta] = useState(false);
   // Pergunta no ar: (intencao, texto) => resposta | null. Dá sentido a "sim", "não" e "a Ana".
   const pendenteRef = useRef(null);
+  // Camada 2: últimas trocas com a IA (contexto) e se foi ela quem falou por último
+  const historicoIaRef = useRef([]);
+  const iaFalouPorUltimoRef = useRef(false);
 
   const voltarParaConversa = useCallback(() => {
     setModo("conversa");
@@ -66,11 +70,34 @@ export function useLumi({ sugestao, contatos = [] }) {
   }, [contatos, ligar, voltarParaConversa]);
 
   // ---------- O que fazer com cada fala ----------
+  // Camada 2: só para o que a camada 1 não sabe responder. Sem internet, sem cota ou
+  // demorando mais de 6 s, a Lumi usa a frase local: ela nunca fica muda.
+  const conversarComIa = useCallback(async (texto) => {
+    try {
+      const { texto: resposta } = await iaService.responder({
+        texto: limparDadosPessoais(texto),
+        historico: historicoIaRef.current,
+      });
+      historicoIaRef.current = [
+        ...historicoIaRef.current,
+        { papel: "pessoa", texto: limparDadosPessoais(texto) },
+        { papel: "lumi", texto: resposta },
+      ].slice(-6); // ponytail: 3 trocas de contexto bastam para papo curto
+      iaFalouPorUltimoRef.current = true;
+      return resposta;
+    } catch (e) {
+      console.warn("IA indisponível, usando a resposta local:", e.message);
+      return respostaLocal(texto);
+    }
+  }, []);
+
   const responder = useCallback(
-    (texto) => {
+    async (texto) => {
       const intencao = detectarIntencao(texto);
       const pendente = pendenteRef.current;
       pendenteRef.current = null;
+      const continuaPapoComIa = iaFalouPorUltimoRef.current;
+      iaFalouPorUltimoRef.current = false;
 
       if (intencao === "seguranca") {
         setAlerta(true);
@@ -98,11 +125,14 @@ export function useLumi({ sugestao, contatos = [] }) {
       if (intencao === "demonstracao") {
         setExercicio(null);
         setModo("demonstracao");
-        return "Modo demonstração. Vou ligar a câmera só para mostrar como eu percebo uma queda.";
+        return "Modo demonstração. Vou ligar a câmera só para mostrar como eu percebo uma queda. Fique com o corpo inteiro aparecendo, da cabeça aos pés.";
       }
+      // "conversa" = nada reconhecido. "sim"/"não" logo depois de uma pergunta da IA também vão para ela.
+      if (intencao === "conversa" || (continuaPapoComIa && (intencao === "sim" || intencao === "nao")))
+        return conversarComIa(texto);
       return respostaLocal(texto);
     },
-    [sugestao, contatos, ligar, perguntarQuem]
+    [sugestao, contatos, ligar, perguntarQuem, conversarComIa]
   );
 
   const conversa = useConversa({ responder });
@@ -163,7 +193,10 @@ export function useLumi({ sugestao, contatos = [] }) {
     [exercicio, terminarExercicio, dizer]
   );
 
-  const aoCair = useCallback(() => {
+  // Queda vista OU pessoa que sumiu por baixo da imagem: a câmera não tem certeza, então a
+  // Lumi PERGUNTA e abre o microfone. Sem resposta, o detector chama ajuda sozinho
+  // (sem movimento por 8 s, ou 15 s sumida).
+  const perguntarSeEstaBem = useCallback((pergunta) => {
     pendenteRef.current = simOuNao({
       sim: () => {
         voltarParaConversa();
@@ -174,8 +207,15 @@ export function useLumi({ sugestao, contatos = [] }) {
         return "Fique onde está. Vou avisar a sua família. Se for urgente, ligue para o SAMU, no 192.";
       },
     });
-    dizer({ texto: "Parece que você caiu. Você está bem?", perguntar: true });
+    dizer({ texto: pergunta, perguntar: true });
   }, [voltarParaConversa, dizer]);
+
+  const aoCair = useCallback(() => perguntarSeEstaBem("Parece que você caiu. Você está bem?"), [perguntarSeEstaBem]);
+  const aoSumir = useCallback(() => perguntarSeEstaBem("Não estou mais te vendo. Você está bem?"), [perguntarSeEstaBem]);
+  const aoEnquadrar = useCallback(
+    () => dizer(exercicio ? "Pronto, já vejo você da cabeça aos pés. Pode começar!" : "Pronto, já vejo você da cabeça aos pés."),
+    [exercicio, dizer]
+  );
 
   const aoFicarParado = useCallback(() => {
     pendenteRef.current = null;
@@ -193,6 +233,6 @@ export function useLumi({ sugestao, contatos = [] }) {
     ...conversa,
     modo, exercicio, ligandoPara, alerta,
     abrirFamilia, ligarPara, desligar, sairDaFamilia,
-    comecarExercicio, terminarExercicio, aoRepetir, aoCair, aoFicarParado, fecharAlerta,
+    comecarExercicio, terminarExercicio, aoRepetir, aoCair, aoSumir, aoEnquadrar, aoFicarParado, fecharAlerta,
   };
 }

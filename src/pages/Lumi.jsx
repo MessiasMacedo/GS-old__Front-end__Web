@@ -94,6 +94,8 @@ export default function Lumi() {
           lumi={lumi}
           aoRepetir={lumi.aoRepetir}
           aoCair={lumi.aoCair}
+          aoSumir={lumi.aoSumir}
+          aoEnquadrar={lumi.aoEnquadrar}
           aoFicarParado={lumi.aoFicarParado}
           onParar={lumi.terminarExercicio}
         />

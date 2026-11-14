@@ -1,6 +1,6 @@
 // Checagem do contador e do detector de queda com corpos "de mentira": `npm run check`.
 import assert from "node:assert/strict";
-import { amostraDoCorpo, contarRepeticao, estadoDoCorpo, faseDoExercicio } from "./movimento.js";
+import { amostraDoCorpo, contarRepeticao, corpoInteiro, estadoDoCorpo, faseDoExercicio, pessoaValida, sumiuDescendo } from "./movimento.js";
 
 // Corpo de 33 pontos; só os que importam recebem posição.
 function corpo({ punhoY = 0.7, joelho = "reto" } = {}) {
@@ -73,4 +73,25 @@ deLado[0] = { x: 0.2, y: 0.78 }; deLado[27] = { x: 0.85, y: 0.84 }; deLado[28] =
 assert.equal(amostraDoCorpo(deLado, 0).deitado, true);
 assert.equal(amostraDoCorpo(corpo({ punhoY: 0.3 }), 0).deitado, false, "braços abertos não é deitado");
 
-console.log("movimento: contador e detector de queda ok");
+// "Pessoa fantasma" (roupa no cabide): pontos com pouca confiança não contam como pessoa
+const fantasma = corpo().map((v) => ({ ...v, visibility: 0.3 }));
+assert.equal(pessoaValida(fantasma), false);
+assert.equal(pessoaValida(corpo()), true);
+
+// Enquadramento: precisa ver da cabeça aos pés
+const semPes = corpo();
+semPes[27] = { x: 0.45, y: 1.05 }; // tornozelo fora da imagem (embaixo)
+assert.equal(corpoInteiro(semPes), false);
+semPes[27] = { x: 0.45, y: 0.9 };
+assert.equal(corpoInteiro(semPes), true);
+
+// Sumiu da imagem: por baixo (queda) x pelo lado (foi buscar água)
+const caindoParaFora = [0, 300, 600, 900].map((t, i) => ({ t, y: 0.5 + i * 0.06, deitado: false }));
+assert.equal(sumiuDescendo(caindoParaFora), true, "quadril desceu 0,18 em 0,9 s");
+const saiuDeLado = [0, 300, 600, 900].map((t) => ({ t, y: 0.55, deitado: false }));
+assert.equal(sumiuDescendo(saiuDeLado), false);
+
+// Sumiu por baixo e reaparece deitado: é queda
+assert.equal(estadoDoCorpo("sumiu", [{ t: 0, y: 0.85, deitado: true }, { t: 500, y: 0.85, deitado: true }]), "caiu");
+
+console.log("movimento: contador, queda, enquadramento e saída da imagem ok");

@@ -7,11 +7,41 @@ import { useExercicio } from "@/hooks/useExercicio";
 import { tipoDeMovimento } from "@/lib/movimento";
 
 const CORPO = {
+  fora: { texto: "Não estou te vendo", cor: "bg-white text-old-azul" },
   ok: { texto: "Em pé ou sentado", cor: "bg-old-verde text-old-azul" },
   deitado: { texto: "Deitado", cor: "bg-old-ciano text-old-azul" },
   caiu: { texto: "Queda percebida", cor: "bg-white text-old-azul" },
+  sumiu: { texto: "Saiu da imagem por baixo", cor: "bg-white text-old-azul" },
   parado: { texto: "Sem movimento", cor: "bg-white text-old-azul" },
 };
+
+const pct = (n) => `${Math.round(n * 100)}%`;
+const num = (n) => (n === null ? "—" : n.toLocaleString("pt-BR", { maximumFractionDigits: 2 }));
+
+// Números ao vivo para calibrar a detecção (só no modo demonstração): em vez de
+// chutar os valores de AJUSTES em lib/movimento.js, o grupo testa e lê aqui.
+function PainelDiagnostico({ d }) {
+  if (!d) return null;
+  const linhas = [
+    ["Pessoa na imagem", d.pessoa ? "sim" : "não"],
+    ["Confiança (cabeça e tronco)", pct(d.confianca), "mínimo 60%"],
+    ["Da cabeça aos pés", d.inteiro ? "sim" : "não"],
+    ["Altura do quadril", num(d.quadril), "0 = topo, 1 = chão"],
+    ["Deitado (último 1 s)", pct(d.deitado), "50% ou mais = deitado"],
+    ["Movimento (8 s)", num(d.movimento), "abaixo de 0,04 = parado"],
+  ];
+  return (
+    <dl className="grid grid-cols-2 gap-2 rounded-2xl bg-white p-4 text-old-azul shadow-md ring-1 ring-old-azul/10 sm:grid-cols-3">
+      {linhas.map(([rotulo, valor, dica]) => (
+        <div key={rotulo}>
+          <dt className="text-base text-old-azul/75">{rotulo}</dt>
+          <dd className="text-xl font-extrabold tabular-nums">{valor}</dd>
+          {dica && <dd className="text-sm text-old-azul/60">{dica}</dd>}
+        </div>
+      ))}
+    </dl>
+  );
+}
 
 /**
  * Tela do exercício: à esquerda o que fazer (boneco + Lumi falando),
@@ -19,8 +49,10 @@ const CORPO = {
  * A câmera liga quando esta tela aparece e desliga quando ela sai.
  * exercicio = null: modo demonstração (só o detector de queda).
  */
-export default function TelaExercicio({ exercicio, lumi, aoRepetir, aoCair, aoFicarParado, onParar }) {
-  const { total, corpo, aoDetectar, contarNaMao } = useExercicio({ exercicio, aoRepetir, aoCair, aoFicarParado });
+export default function TelaExercicio({ exercicio, lumi, aoRepetir, aoCair, aoSumir, aoFicarParado, aoEnquadrar, onParar }) {
+  const { total, corpo, enquadrado, diagnostico, aoDetectar, contarNaMao } = useExercicio({
+    exercicio, aoRepetir, aoCair, aoSumir, aoFicarParado, aoEnquadrar,
+  });
   const { videoRef, canvasRef, status, erro } = usePose(aoDetectar);
   const demo = !exercicio;
   const movimento = demo ? null : tipoDeMovimento(exercicio.nome);
@@ -46,12 +78,21 @@ export default function TelaExercicio({ exercicio, lumi, aoRepetir, aoCair, aoFi
               {erro ?? "Ligando a câmera…"}
             </p>
           )}
-          {status === "pronto" && (demo || corpo !== "ok") && (
-            <p aria-live="assertive" className={`absolute bottom-4 left-4 rounded-full px-5 py-2 text-2xl font-extrabold shadow-lg ${CORPO[corpo].cor}`}>
-              {CORPO[corpo].texto}
+          {/* Antes de tudo, enquadrar: sem os pés na imagem, uma queda sairia pela borda de baixo */}
+          {status === "pronto" && !enquadrado && (corpo === "fora" || corpo === "ok") ? (
+            <p aria-live="polite" className="absolute inset-x-4 bottom-4 rounded-2xl bg-old-azul/90 px-5 py-3 text-center text-2xl font-extrabold text-white">
+              Afaste-se até eu ver você da cabeça aos pés
             </p>
+          ) : (
+            status === "pronto" && (demo || corpo !== "ok") && (
+              <p aria-live="assertive" className={`absolute bottom-4 left-4 rounded-full px-5 py-2 text-2xl font-extrabold shadow-lg ${CORPO[corpo].cor}`}>
+                {CORPO[corpo].texto}
+              </p>
+            )
           )}
         </div>
+
+        {demo && status === "pronto" && <PainelDiagnostico d={diagnostico} />}
 
         {!demo && (
           <div>
@@ -97,7 +138,7 @@ export default function TelaExercicio({ exercicio, lumi, aoRepetir, aoCair, aoFi
 
         {demo ? (
           <p className="text-2xl text-old-azul/85">
-            Fique de corpo inteiro na frente da câmera. Se o corpo descer rápido e ficar deitado, eu pergunto se você está bem.
+            Fique de corpo inteiro na frente da câmera. Se você cair, sair da imagem por baixo ou ficar parado no chão, eu pergunto se você está bem.
           </p>
         ) : (
           <div className="hidden justify-center rounded-[2rem] bg-white py-4 shadow-md ring-1 ring-old-azul/10 sm:flex">

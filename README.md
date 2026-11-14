@@ -38,11 +38,13 @@ Toque no rosto da Lumi e fale:
 | "Quero falar com a família" / "liga pra minha filha" | Pergunta para quem ligar (contatos do painel) e abre uma ligação de demonstração. |
 | "Caí" / "socorro" / "dor no peito" | Alerta em tela cheia com o SAMU (192). |
 | "Câmera computacional" | Modo demonstração da detecção de queda. |
+| Qualquer outro assunto ("o jogo ontem foi bom") | Conversa livre com a IA (Gemini). Sem internet, ela responde com uma frase local. |
 
 ## Tecnologias
 - **React 19** + **Vite 8** + **React Router 7**
 - **Tailwind CSS 4**, fonte **Atkinson Hyperlegible Next** (feita para baixa visão)
 - **Supabase**: banco Postgres, regras de segurança (RLS) e atualização ao vivo (Realtime), via `@supabase/supabase-js` 2.118.0
+- **Gemini** (`gemini-3.5-flash-lite`, plano gratuito) numa **Edge Function do Supabase**, só para a conversa livre
 - **MediaPipe Pose** (`@mediapipe/tasks-vision` 1.2.0): visão computacional rodando no próprio navegador
 - **Web Speech API**: reconhecimento e síntese de voz do navegador
 
@@ -68,6 +70,14 @@ Outros comandos:
 - `npm run check`: testes das regras (intenções da fala, contagem de repetições, detecção de queda, alertas do painel).
 - `npm run build`: versão de produção em `dist/`.
 
+### IA da conversa (Edge Function)
+1. Crie uma chave no [Google AI Studio](https://aistudio.google.com).
+2. No Supabase, vá em **Edge Functions → Secrets** e crie `GEMINI_API_KEY` com essa chave.
+3. Em **Edge Functions → Deploy a new function → Via Editor**, crie a função `conversar`, cole o código de [`supabase/functions/conversar/index.ts`](supabase/functions/conversar/index.ts) e publique.
+4. Na função, **desligue "Verify JWT"**. A chave publishable não é um JWT; a função confere a chave do projeto no próprio código.
+
+Sem a função, a Lumi continua funcionando com as respostas locais.
+
 ### Deploy na Vercel
 O `vercel.json` já redireciona as rotas para o React Router. Em **Settings → Environment Variables**, cadastre `VITE_SUPABASE_URL` e `VITE_SUPABASE_KEY` com os mesmos valores do `.env.local` e faça um novo deploy.
 
@@ -75,7 +85,7 @@ O `vercel.json` já redireciona as rotas para o React Router. Em **Settings → 
 - `src/pages/`: as três telas (Início, Lumi, Família)
 - `src/components/`: componentes visuais, sem regra de negócio (`lumi/`, `familia/`, `site/`, `ui/`)
 - `src/hooks/`: custom hooks com a lógica
-  - `useLumi`: modos da tela e pergunta pendente
+  - `useLumi`: modos da tela, pergunta pendente e quando chamar a IA
   - `useConversa` e `useVoz`: fala
   - `usePose` e `useExercicio`: câmera e contagem
   - `useColecao`: CRUD
@@ -86,6 +96,7 @@ O `vercel.json` já redireciona as rotas para o React Router. Em **Settings → 
   - `alertas`: painel da família
 - `src/services/`: acesso ao Supabase; o formato está em `CONTRATO-API.md`
 - `supabase/schema.sql`: tabelas, segurança e dados de exemplo
+- `supabase/functions/conversar/`: Edge Function da IA (Gemini)
 
 ## Requisitos da disciplina
 
@@ -102,6 +113,7 @@ O `vercel.json` já redireciona as rotas para o React Router. Em **Settings → 
 
 ## Privacidade e segurança
 - **A câmera só liga na tela de exercício** e mostra o aviso "Câmera ligada". A imagem é analisada no próprio aparelho e descartada: nenhum vídeo é gravado ou enviado.
+- **A conversa livre** (só ela) vai para o Gemini, do Google, **sem nome, telefone, documentos ou e-mail**: um filtro tira esses dados antes. No plano gratuito, o Google pode usar o que é enviado para melhorar os produtos dele, e por isso nada pessoal deve ser enviado. A chave da IA fica no servidor do Supabase, nunca no site.
 - **A voz** é processada pelo navegador. No Chrome e no Edge, o reconhecimento de fala usa um serviço online do próprio navegador.
 - **No banco ficam só:** contatos, rotina e sessões de exercício (nome do exercício, repetições e data).
 - **As sessões não podem ser alteradas nem apagadas pelo site.** O banco bloqueia isso com permissões e RLS.
@@ -113,5 +125,5 @@ O `vercel.json` já redireciona as rotas para o React Router. Em **Settings → 
 - **A detecção de queda é uma heurística** (o corpo desce rápido e fica deitado, ou fica parado no chão). Depende da posição da câmera e precisa de calibragem no aparelho real. Não é diagnóstico.
 - **"Vou avisar a sua família" ainda é só fala e tela:** nenhum aviso é enviado.
 - **A ligação para a família é uma tela de demonstração**, sem chamada real.
-- **A conversa livre ainda não usa IA:** a Lumi entende comandos e responde com frases prontas.
+- **A conversa livre usa o plano gratuito do Gemini**, que tem limite de uso e pode usar os textos para treinar o modelo do Google. A função da IA só aceita a chave pública do projeto, mas, como essa chave é pública, alguém com o site aberto poderia gastar a cota.
 - **"Dona Maria" é um perfil fixo de demonstração** (`src/lib/config.js`). O histórico da semana tem sessões de exemplo, criadas pelo `schema.sql`.

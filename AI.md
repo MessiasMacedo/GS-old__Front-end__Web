@@ -123,6 +123,54 @@
   - O teste também achou um bug: "liga" e "ligue" não eram reconhecidos (só "ligar").
   - Falta calibrar com câmera real no chão.
 
+### Etapa 14 — IA da conversa e menu no celular (Claude Code)
+- **Prompt (resumo):** ligar a IA (Gemini via Supabase) para a conversa do dia a dia, arrumar o menu do site que quebrava no celular, analisar por que a detecção de queda falhou no teste real e pesquisar 4 ferramentas de voz.
+- **Pesquisa (com fontes):**
+  - **Vozes:** Voicebox e VoiceStudio são programas de computador; PersonaPlex só fala inglês e exige GPU de servidor; o site do Kokoro não é oficial, e o modelo tem só uma voz feminina pt-BR sem caminho pronto no navegador. Depois de ouvir as opções, o grupo preferiu a voz Francisca do Edge.
+  - **IA:** o modelo `gemini-2.5-flash`, que a IA tinha em mente, estava sendo desligado; a documentação atual indicou `gemini-3.5-flash-lite`, que não aceita mais `temperature`.
+  - **Supabase:** a chave nova `sb_publishable_` não é JWT, então a função fica com "Verify JWT" desligado e confere a chave no código.
+- **Gerado:**
+  - Edge Function `supabase/functions/conversar`: persona da Lumi, sem diagnóstico, SAMU nas emergências, no máximo 2 frases; valida a entrada; corta respostas longas; trata bloqueio de segurança e falhas.
+  - `iaService` (no contrato) e `chamarFuncao()` com limite de 6 s.
+  - `limparDadosPessoais()`: telefones, documentos e e-mails não vão para a IA.
+  - No `useLumi`, a IA só entra quando a camada 1 não reconhece a fala, e "sim"/"não" logo depois de uma pergunta da IA continuam com ela.
+  - Menu do site com nomes curtos no celular.
+  - Aviso de privacidade na Home e no README.
+- **Validação:**
+  - 14 verificações da função no Node, com o Gemini simulado: chave de outro projeto, entrada inválida, resposta boa, bloqueio, cota estourada, rede caída, texto longo.
+  - Sem a função publicada, a Lumi respondeu com a frase local em 0,3 s.
+  - O teste do filtro de dados pessoais achou um erro: o "(" do DDD ficava fora.
+  - **Com a função publicada (Gemini de verdade):**
+    - "o jogo do Corinthians foi bom ontem" → "Que bom que você gostou do jogo de ontem! Você costuma assistir às partidas com alguém da sua família?" (3,5 s na primeira chamada, que acorda a função);
+    - "sim" com o contexto → continuou o assunto (0,9 s);
+    - pergunta sobre dose de remédio → recusou e indicou médico ou família (0,7 s);
+    - "anota meu telefone (11) 98765-4321" → para a IA saiu só "anota meu telefone [número]", e a Lumi respondeu que não guarda dados pessoais;
+    - chamada sem chave ou com a chave de outro projeto → recusada pelo próprio Supabase (401).
+
+### Etapa 15 — Detecção de queda com o mundo real (Claude Code)
+- **Prompt (resumo):** no teste do grupo com a câmera real:
+  - fora da câmera (só o guarda-roupa aparecendo), a tela dizia "em pé";
+  - tropeçando e caindo, nada acontecia;
+  - deitado no chão, nada acontecia.
+
+  O grupo também perguntou como diferenciar alguém dormindo de alguém que precisa de ajuda.
+- **Análise da IA:**
+  - Sem ninguém na imagem, o código ignorava o quadro e continuava mostrando o último estado ("em pé"), e não conferia a confiança da detecção.
+  - Com a câmera na altura de uma mesa, o chão fica fora da imagem: quem cai **sai pela borda de baixo**, e o detector, que precisava *ver* o corpo deitado, não recebia nada.
+  - A câmera nunca vai ter certeza (caiu? desmaiou? deitou para descansar?). Por isso, na dúvida, a Lumi **pergunta**; sem resposta e sem movimento, chama ajuda.
+- **Gerado:**
+  - Estado "Não estou te vendo".
+  - Filtro de confiança: média da cabeça e do tronco abaixo de 60% = "pessoa fantasma".
+  - **Enquadramento:** a Lumi só começa a contar depois de ver a pessoa da cabeça aos pés, e avisa "Pronto, já vejo você da cabeça aos pés".
+  - **"Sumiu por baixo"** (quadril perto da borda de baixo ou descendo rápido ao sumir) vira a pergunta "Não estou mais te vendo. Você está bem?"; sumir pelo lado não alarma.
+  - Sumida por 15 s sem responder = alerta.
+  - **Painel de diagnóstico** no modo demonstração, com os números ao vivo para calibrar.
+- **Erro encontrado no teste com fotos reais:** a primeira versão do filtro usava a média do corpo todo, incluindo as pernas, e duas pessoas reais sentadas atrás de uma mesa (confiança 0,57 e 0,48) seriam descartadas como fantasma. Medindo só cabeça e tronco, as 7 pessoas das fotos ficaram entre 0,80 e 1,00.
+- **Validação:**
+  - Novos casos no `npm run check`: fantasma, enquadramento, sumir por baixo × pelo lado, reaparecer deitado = queda.
+  - O teste ponta a ponta com uma "câmera falsa" (foto em movimento) não rodou porque o navegador de testes estava em segundo plano.
+  - **Falta o teste do grupo com a câmera real**, lendo o painel de diagnóstico.
+
 > **Rascunho:** as três seções abaixo foram rascunhadas pela IA a partir do registro das etapas acima. O grupo deve revisar e ajustar com a própria opinião antes da entrega.
 
 ## Aplicação no projeto

@@ -87,6 +87,7 @@ export const PRIVACIDADE = {
     "Pede permissão antes de ligar a câmera",
     "Mostra na tela quando a câmera está ativa",
     "Envia à família apenas números: exercício, repetições, data",
+    "No papo livre, manda à IA só a frase, sem nome, telefone ou documentos",
     "Sugere procurar alguém de confiança quando algo merece atenção",
   ],
   naoFaz: [

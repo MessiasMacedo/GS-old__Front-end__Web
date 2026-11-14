@@ -1,6 +1,6 @@
 // Checagem rápida das intenções: `npm run check`. Falha alto se alguma regra quebrar.
 import assert from "node:assert/strict";
-import { acharContato, detectarIntencao, juntarNomes } from "./intencoes.js";
+import { acharContato, detectarIntencao, juntarNomes, limparDadosPessoais } from "./intencoes.js";
 
 const casos = {
   "Eu caí no banheiro": "seguranca",
@@ -44,5 +44,10 @@ assert.equal(acharContato("o meu NETO", contatos)?.nome, "Pedro Henrique");
 assert.equal(acharContato("comprei banana", contatos), null, "'ana' dentro de banana não conta");
 assert.equal(juntarNomes(contatos), "Ana ou Pedro Henrique");
 assert.equal(juntarNomes([...contatos, { nome: "João" }]), "Ana, Pedro Henrique ou João");
+
+// O que vai para a IA não leva telefone, CPF nem e-mail
+assert.equal(limparDadosPessoais("meu telefone é (11) 98765-4321"), "meu telefone é [número]");
+assert.equal(limparDadosPessoais("CPF 123.456.789-00, e-mail maria@gmail.com"), "CPF [número], e-mail [e-mail]");
+assert.equal(limparDadosPessoais("tenho 82 anos e 3 netos"), "tenho 82 anos e 3 netos", "números curtos ficam");
 
 console.log(`intencoes: ${Object.keys(casos).length} casos e contatos ok`);

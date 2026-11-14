@@ -51,6 +51,13 @@ export function juntarNomes(contatos) {
   return nomes.length < 2 ? (nomes[0] ?? "") : `${nomes.slice(0, -1).join(", ")} ou ${nomes.at(-1)}`;
 }
 
+/**
+ * Antes de mandar a fala para a IA (um serviço de fora), tira o que identifica a pessoa:
+ * telefones, CPF e qualquer sequência longa de números, e e-mails.
+ */
+export const limparDadosPessoais = (texto) =>
+  texto.replace(/\S+@\S+\.\S+/g, "[e-mail]").replace(/[+(]?\d[\d\s().-]{6,}\d/g, "[número]");
+
 /** Retorna o tipo da intenção, ou "conversa" quando nenhuma regra bate. */
 export function detectarIntencao(texto) {
   const t = normalizar(texto);

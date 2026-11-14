@@ -30,6 +30,16 @@ Nomes das funções, parâmetros e formato dos objetos **não mudam** sem combin
 | `listar()` | — | `[{ id, exercicio, repeticoes, data }]`, mais recentes primeiro |
 | `criar(dados)` | `{ exercicio, repeticoes }` | a sessão criada (a API preenche `id` e `data`) |
 
+## iaService.js — conversa livre com a IA (camada 2)
+| Função | Recebe | Devolve |
+|---|---|---|
+| `responder(dados)` | `{ texto, historico }`. `historico` = últimas trocas `[{ papel: "pessoa" \| "lumi", texto }]` | `{ texto }`: resposta curta, pronta para ser falada |
+
+- Só é chamada quando a camada 1 (`lib/intencoes.js`) não reconhece a fala. Segurança, exercício, família, horas e cumprimentos **nunca** passam pela IA.
+- O texto chega **sem dados pessoais** (`limparDadosPessoais`: telefones, documentos e e-mails viram `[número]` e `[e-mail]`).
+- Em erro ou depois de 6 s, lança `Error`. O `useLumi` usa a resposta local, e a Lumi nunca fica muda.
+- Servidor: Edge Function `supabase/functions/conversar`, que guarda a chave do Gemini no secret `GEMINI_API_KEY`. A função confere a chave pública do projeto, valida os tamanhos (até 500 caracteres e 6 trocas) e corta respostas longas.
+
 ## Banco (Supabase)
 - Tabelas, regras de segurança (RLS) e dados de exemplo: `supabase/schema.sql`. Cole no SQL Editor e rode.
   - `contatos` e `rotina`: CRUD completo.

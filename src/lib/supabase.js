@@ -13,6 +13,17 @@ export function tabela(nome) {
 }
 
 /**
+ * Chama uma Edge Function (código que roda no servidor do Supabase e guarda chaves
+ * secretas, como a da IA). Desiste depois de `limiteMs`: a Lumi não pode ficar muda.
+ */
+export async function chamarFuncao(nome, corpo, limiteMs = 6000) {
+  if (!supabase) throw new Error("O banco ainda não foi configurado. Confira o arquivo .env.local.");
+  const { data, error } = await supabase.functions.invoke(nome, { body: corpo, timeout: limiteMs });
+  if (error) throw error;
+  return data;
+}
+
+/**
  * Avisa a cada linha nova na tabela (Supabase Realtime), sem recarregar a página.
  * `aoMudarConexao(true/false)` diz se a escuta está ativa. Devolve a função que desliga.
  */

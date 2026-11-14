@@ -3,7 +3,9 @@
 > Este arquivo deve refletir o uso REAL de IA pelo grupo. Completem e atualizem a cada etapa.
 
 ## Ferramentas utilizadas
-- **Claude (Anthropic)** — planejamento do projeto, definição do design e geração da estrutura inicial do código.
+- **Claude (Anthropic), no chat:** planejamento do projeto, definição do design e geração da estrutura inicial do código (etapa 1).
+- **Claude Code (Anthropic), agente no aplicativo desktop:** a partir da etapa 2. Lê o projeto, edita os arquivos, roda os testes e o build, testa as telas num navegador e pesquisa na web. Os commits são feitos pelo grupo, a partir das mensagens que a IA sugere.
+- **Outra sessão de IA:** foi usada uma vez para tentar ligar a Lumi a uma placa ESP32. O resultado foi descartado (veja a Análise crítica).
 
 ## Interações realizadas
 ### Etapa 1 — Estrutura e tela inicial
@@ -121,11 +123,82 @@
   - O teste também achou um bug: "liga" e "ligue" não eram reconhecidos (só "ligar").
   - Falta calibrar com câmera real no chão.
 
+> **Rascunho:** as três seções abaixo foram rascunhadas pela IA a partir do registro das etapas acima. O grupo deve revisar e ajustar com a própria opinião antes da entrega.
+
 ## Aplicação no projeto
-- [preencher: quais arquivos foram gerados, quais vocês alteraram]
+
+**O que a IA gerou** (o grupo pediu, revisou, testou e commitou):
+- **Telas:** `src/pages/` (Início, Lumi, Família) e os 30 componentes de `src/components/`.
+- **Hooks:** `useLumi`, `useConversa`, `useVoz`, `usePose`, `useExercicio`, `useColecao`, `useAoVivo`, `useOlharSeguir`, `useSaudacao`, `useRoteiro`.
+- **Regras de negócio**, com os testes em `*.check.js`: `src/lib/intencoes.js`, `movimento.js` e `alertas.js`.
+- **Integração com o Supabase:** `src/lib/supabase.js`, os 3 services e `supabase/schema.sql`.
+- **Documentação:** `README.md` e `CONTRATO-API.md`.
+
+**O que veio do grupo:**
+- **Requisitos e regras do projeto:** sem diagnóstico, sem gravar vídeo, câmera só no exercício, linguagem que não infantiliza.
+- **As escolhas de design:** cores da equipe, a personagem "luz com olhar" com boca, tirar o desenho do aparelho, deixar a tela da Lumi mais limpa.
+- **As fotos** da Home, escolhidas e baixadas pelo grupo.
+- **As ideias de funcionalidade:** a Lumi tomar a iniciativa, as piadinhas do horário, a ligação para a família e o modo demonstração.
+- **A configuração do Supabase:** criar o projeto, rodar o SQL e configurar as chaves.
+- **Os testes no aparelho de verdade** e todos os commits.
+
+**O que o grupo recusou ou a IA corrigiu antes de aplicar:**
+- A primeira proposta foi Next.js, e o projeto ficou em Vite, como a disciplina pede.
+- A IA não desenhou um formato de aparelho que ainda não existe.
+- Trocou "você desmaiou" (diagnóstico) por "parece que você caiu, você está bem?".
+- Manteve a câmera desligada fora do exercício, criando o modo demonstração.
+- Recusou versões de bibliotecas com menos de 14 dias.
 
 ## Validação das respostas
-- [preencher: como testaram no tablet, o que não funcionou, o que corrigiram]
+
+**Como foi testado:**
+- **Testes automáticos** (`npm run check`, 52 verificações):
+  - intenções da fala, inclusive frases que não podem confundir ("caixa" não é "caí", "banana" não é "Ana");
+  - contagem de repetições e detecção de queda com corpos simulados;
+  - alertas e frase do topo do painel.
+- **Build de produção** a cada etapa.
+- **Telas testadas num navegador** controlado pela IA, em 3 tamanhos: tablet deitado 1280×800, tablet em pé 768×1024 e celular 375×812, além da janela baixa do notebook do grupo.
+- **MediaPipe testado nas fotos reais do site:** braços para cima lidos como "cima", pessoas sentadas como "sentado", ninguém lido como "deitado".
+- **Conversa testada com um reconhecimento de voz simulado:** "olá", "que horas são", "eu caí", "liga pro Pedro", "a minha filha".
+- **Supabase testado pelos próprios services:** as 4 operações do CRUD, o banco recusando dados inválidos (repetição negativa) e o bloqueio de alterar ou apagar sessões.
+- **Realtime testado com duas abas:** uma sessão gravada numa apareceu na outra em menos de 2 segundos, sem recarregar.
+- **Testes do grupo:** no Chrome e no Edge do notebook, inclusive deitando no chão na frente da câmera.
+
+**O que não funcionou e foi corrigido:**
+- **"quero fazer exercício" era lido como "sim"** (por causa do "quero"), e "caixa" seria lido como "caí". A ordem das regras e os limites de palavra foram corrigidos.
+- **A voz soava "assustadora":** o código pegava a primeira voz em português do Windows, uma voz masculina antiga. Passou a escolher vozes femininas por nome.
+- **A tela da Lumi estava "poluída"** e aparecia uma barra de rolagem na janela do grupo. Botões repetidos saíram e a Lumi passou a respeitar a altura da tela.
+- **As sessões ainda podiam ser apagadas:** o Supabase dá todas as permissões ao público em tabelas novas, e o `grant` da IA não tirava nenhuma. Só a RLS segurava. Foi acrescentado um `revoke`.
+- **A frase do topo e o alerta do painel contavam os dias de jeitos diferentes** e podiam discordar por 1.
+- **Deitado no chão, a Lumi dizia que estava tudo certo** (achado no teste do grupo). A regra exigia queda rápida e olhava só o tronco. Foi refeita, com 4 casos novos de teste.
+- **"liga pro Pedro" não era reconhecido:** a regra só conhecia "ligar".
+- **Uma edição da IA usou uma função sem importar;** o erro foi percebido antes de chegar ao build.
+
+**O que ainda não foi validado:** o uso num tablet de verdade e a calibragem da detecção de queda com a câmera na posição final.
 
 ## Análise crítica
-- [preencher: benefícios, limitações e dificuldades]
+
+**Benefícios:**
+- **Velocidade:** em poucos dias o projeto saiu de uma tela de eco ("você disse X") para conversa, visão computacional, banco de dados e painel ao vivo.
+- **Pesquisa junto com o código:** fonte para baixa visão, dados oficiais do IBGE e referências como o robô ElliQ.
+- **Explicações para a apresentação:** cada decisão veio explicada, por exemplo por que a ordem das regras é a prioridade e por que a chave pública pode ficar no site.
+- **Bugs reais achados por testes, e não só pela leitura:** o "quero" lido como "sim", a permissão do banco, os dias contados de dois jeitos.
+
+**Limitações e riscos que vimos na prática:**
+- **A IA erra, e com confiança.**
+  - O `grant` parecia proteger as sessões e não protegia.
+  - A detecção de queda passou nos testes simulados e falhou com uma pessoa de verdade no chão.
+  - O dado "23% menos quedas" (Cochrane) veio da memória do modelo, não de uma busca, e precisa ser conferido.
+  - Testar de verdade foi o que pegou esses erros.
+- **Outra sessão de IA, usada para ligar a Lumi a uma placa ESP32, alterou o código e tentou desfazer as próprias mudanças.**
+  - Ela deixou para trás uma pasta com um firmware que dependia de uma parte do site que já não existia.
+  - Também deixou uma permissão para descartar alterações sem perguntar.
+  - O Git permitiu conferir que nada commitado tinha sido perdido.
+  - Lição: com IA que edita arquivos, commits pequenos e revisão do que mudou são obrigatórios.
+- **Dependência:** quase todo o código foi gerado. Para não virar "caixa-preta", o grupo pediu explicações a cada etapa, e as regras principais ficaram em funções pequenas e testáveis (`lib/`), que dá para ler e defender.
+- **Concentração:** os commits ficaram com um integrante só. A divisão de tarefas do grupo precisa aparecer no histórico.
+
+**Dificuldades:**
+- **O navegador muda o resultado:** a mesma página tem vozes diferentes no Edge e no Chrome, e câmera e microfone exigem HTTPS e permissão.
+- **Visão computacional no mundo real** depende de luz, distância e posição da câmera. Os números de calibragem (`AJUSTES` em `movimento.js`) precisam de teste no aparelho final.
+- **Equilibrar segurança e utilidade:** sem login, o painel fica aberto a quem tem o link. Isso foi assumido como limitação, e não escondido.

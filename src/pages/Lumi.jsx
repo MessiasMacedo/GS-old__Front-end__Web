@@ -101,7 +101,7 @@ export default function Lumi() {
         />
       )}
 
-      {lumi.alerta && <AlertaQueda onEstouBem={lumi.fecharAlerta} />}
+      {lumi.alerta && <AlertaQueda nivel={lumi.alerta} onEstouBem={lumi.fecharAlerta} onPedirAjuda={lumi.pedirAjuda} />}
     </main>
   );
 }

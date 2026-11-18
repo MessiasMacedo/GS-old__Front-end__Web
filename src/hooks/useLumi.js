@@ -8,7 +8,7 @@ import * as iaService from "@/services/iaService";
 
 // ponytail: "avisar a família" ainda é só fala e tela. O aviso de verdade precisa de um
 // alertasService no contrato com a API (Supabase); combinar com a parte do banco.
-const CHAMAR_AJUDA = "Não estou vendo você se mexer. Vou avisar a sua família. Se for urgente, ligue para o SAMU, no 192.";
+const EMERGENCIA = "Fique onde está. Vou avisar a sua família. Se for urgente, ligue para o SAMU, no 192.";
 
 const convite = (ex) =>
   `Que bom! Fico muito feliz de ouvir isso. Vamos começar com ${ex.nome.toLowerCase()}, ${ex.repeticoes} vezes. ` +
@@ -30,7 +30,8 @@ export function useLumi({ sugestao, contatos = [] }) {
   const [modo, setModo] = useState("conversa");
   const [exercicio, setExercicio] = useState(null);
   const [ligandoPara, setLigandoPara] = useState(null);
-  const [alerta, setAlerta] = useState(false);
+  // Tela de alerta: null | "familia" (caiu e não respondeu) | "emergencia" (pediu ajuda)
+  const [alerta, setAlerta] = useState(null);
   // Pergunta no ar: (intencao, texto) => resposta | null. Dá sentido a "sim", "não" e "a Ana".
   const pendenteRef = useRef(null);
   // Camada 2: últimas trocas com a IA (contexto) e se foi ela quem falou por último
@@ -100,7 +101,7 @@ export function useLumi({ sugestao, contatos = [] }) {
       iaFalouPorUltimoRef.current = false;
 
       if (intencao === "seguranca") {
-        setAlerta(true);
+        setAlerta("emergencia"); // a própria pessoa disse "caí", "socorro", "dor no peito"
         pendenteRef.current = simOuNao({
           sim: () => "Certo, vou avisar a sua família. Se for urgente, ligue para o SAMU, no 192.",
           nao: () => "Tudo bem. Estou aqui do seu lado se precisar.",
@@ -196,35 +197,59 @@ export function useLumi({ sugestao, contatos = [] }) {
   // Queda vista OU pessoa que sumiu por baixo da imagem: a câmera não tem certeza, então a
   // Lumi PERGUNTA e abre o microfone. Sem resposta, o detector chama ajuda sozinho
   // (sem movimento por 8 s, ou 15 s sumida).
-  const perguntarSeEstaBem = useCallback((pergunta) => {
+  // A câmera nunca tem certeza, então a Lumi ESCALA aos poucos (a família, nunca o SAMU, por conta própria):
+  //  1. deitou devagar e ficou parado  -> só pergunta, com calma
+  //  2. caiu ou sumiu por baixo        -> pergunta "você está bem?"
+  //  3. caiu e não respondeu/mexeu     -> tela avisando a FAMÍLIA (SAMU como opção)
+  //  4. disse "não", "socorro" ou tocou em "Preciso de ajuda" -> SAMU em destaque
+  const perguntarSeEstaBem = useCallback((pergunta, aoDizerSim) => {
     pendenteRef.current = simOuNao({
-      sim: () => {
-        voltarParaConversa();
-        return "Que alívio! Vamos parar por hoje. Levante devagar e descanse um pouco.";
-      },
+      sim: aoDizerSim,
       nao: () => {
-        setAlerta(true);
-        return "Fique onde está. Vou avisar a sua família. Se for urgente, ligue para o SAMU, no 192.";
+        setAlerta("emergencia");
+        return EMERGENCIA;
       },
     });
     dizer({ texto: pergunta, perguntar: true });
-  }, [voltarParaConversa, dizer]);
+  }, [dizer]);
 
-  const aoCair = useCallback(() => perguntarSeEstaBem("Parece que você caiu. Você está bem?"), [perguntarSeEstaBem]);
-  const aoSumir = useCallback(() => perguntarSeEstaBem("Não estou mais te vendo. Você está bem?"), [perguntarSeEstaBem]);
+  const pararPorHoje = useCallback(() => {
+    voltarParaConversa();
+    return "Que alívio! Vamos parar por hoje. Levante devagar e descanse um pouco.";
+  }, [voltarParaConversa]);
+
+  const aoCair = useCallback(
+    () => perguntarSeEstaBem("Parece que você caiu. Você está bem?", pararPorHoje),
+    [perguntarSeEstaBem, pararPorHoje]
+  );
+  const aoSumir = useCallback(
+    () => perguntarSeEstaBem("Não estou mais te vendo. Você está bem?", pararPorHoje),
+    [perguntarSeEstaBem, pararPorHoje]
+  );
   const aoEnquadrar = useCallback(
     () => dizer(exercicio ? "Pronto, já vejo você da cabeça aos pés. Pode começar!" : "Pronto, já vejo você da cabeça aos pés."),
     [exercicio, dizer]
   );
 
-  const aoFicarParado = useCallback(() => {
-    pendenteRef.current = null;
-    setAlerta(true);
-    dizer(CHAMAR_AJUDA);
+  // Parado no chão: depois de uma queda é sério; sem queda, é alguém descansando.
+  const aoFicarParado = useCallback(
+    ({ aposQueda }) => {
+      if (!aposQueda)
+        return perguntarSeEstaBem("Você está descansando? Está tudo bem?", () => "Que bom! Descanse um pouco. Estou aqui.");
+      pendenteRef.current = null;
+      setAlerta("familia");
+      dizer("Não ouvi você responder. Vou avisar a sua família. Se precisar, toque em Preciso de ajuda.");
+    },
+    [perguntarSeEstaBem, dizer]
+  );
+
+  const pedirAjuda = useCallback(() => {
+    setAlerta("emergencia");
+    dizer("Ligue agora para o SAMU, no 192. Também estou avisando a sua família.");
   }, [dizer]);
 
   const fecharAlerta = useCallback(() => {
-    setAlerta(false);
+    setAlerta(null);
     voltarParaConversa();
     dizer("Que bom que você está bem! Se precisar, é só me chamar.");
   }, [voltarParaConversa, dizer]);
@@ -233,6 +258,6 @@ export function useLumi({ sugestao, contatos = [] }) {
     ...conversa,
     modo, exercicio, ligandoPara, alerta,
     abrirFamilia, ligarPara, desligar, sairDaFamilia,
-    comecarExercicio, terminarExercicio, aoRepetir, aoCair, aoSumir, aoEnquadrar, aoFicarParado, fecharAlerta,
+    comecarExercicio, terminarExercicio, aoRepetir, aoCair, aoSumir, aoEnquadrar, aoFicarParado, fecharAlerta, pedirAjuda,
   };
 }

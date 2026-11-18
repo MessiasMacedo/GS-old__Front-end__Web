@@ -23,7 +23,7 @@ export function useExercicio({ exercicio, aoRepetir, aoCair, aoSumir, aoFicarPar
   const [diagnostico, setDiagnostico] = useState(null);
   const estado = useRef({
     fase: null, total: 0, corpo: "fora", amostras: [], ultimoVisto: 0,
-    enquadrado: false, inteiroDesde: null, sumiuEm: 0, diagnosticoEm: 0,
+    enquadrado: false, inteiroDesde: null, sumiuEm: 0, diagnosticoEm: 0, houveQueda: false,
   });
   const avisos = useRef({});
 
@@ -35,8 +35,12 @@ export function useExercicio({ exercicio, aoRepetir, aoCair, aoSumir, aoFicarPar
     if (novoCorpo === s.corpo) return;
     s.corpo = novoCorpo;
     setCorpo(novoCorpo);
+    // Lembra se houve queda (ou sumiço por baixo) neste episódio: parado DEPOIS de cair é
+    // sério; parado depois de deitar devagar é descanso. Levantou ou saiu de lado: zera.
+    if (novoCorpo === "caiu" || novoCorpo === "sumiu") s.houveQueda = true;
+    if (novoCorpo === "ok" || novoCorpo === "fora") s.houveQueda = false;
     if (novoCorpo === "caiu") avisos.current.aoCair?.();
-    if (novoCorpo === "parado") avisos.current.aoFicarParado?.();
+    if (novoCorpo === "parado") avisos.current.aoFicarParado?.({ aposQueda: s.houveQueda });
     if (novoCorpo === "sumiu") {
       s.sumiuEm = t;
       avisos.current.aoSumir?.();

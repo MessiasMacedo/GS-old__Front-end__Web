@@ -28,7 +28,7 @@ export default function GerenciarContatos({ colecao }) {
       acao={editando === null && <Botao onClick={() => setEditando("novo")}>Adicionar contato</Botao>}
     >
       {editando === "novo" && (
-        <div className="mb-4"><FormContato onSalvar={salvar} onCancelar={() => setEditando(null)} /></div>
+        <div className="mb-4"><FormContato outros={itens} onSalvar={salvar} onCancelar={() => setEditando(null)} /></div>
       )}
       <EstadoLista carregando={carregando} erro={erro} vazio={itens.length === 0}
         mensagemVazio="Nenhum contato ainda. Adicione alguém que a Lumi possa sugerir para uma ligação.">
@@ -36,7 +36,7 @@ export default function GerenciarContatos({ colecao }) {
           {itens.map((c) =>
             editando === c.id ? (
               <li key={c.id}>
-                <FormContato inicial={c} onSalvar={salvar} onCancelar={() => setEditando(null)} />
+                <FormContato outros={itens.filter((x) => x.id !== editando)} inicial={c} onSalvar={salvar} onCancelar={() => setEditando(null)} />
               </li>
             ) : (
               <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-old-azul-claro/50 px-4 py-3 text-old-azul">

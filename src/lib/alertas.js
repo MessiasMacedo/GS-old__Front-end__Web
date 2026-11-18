@@ -21,7 +21,7 @@ export function gerarAlertas(sessoes, agora = new Date()) {
     alertas.push({
       id: "sem-atividade",
       titulo: `${dias} dias sem exercícios`,
-      detalhe: "Que tal ligar e perguntar como ela está?",
+      detalhe: "Que tal ligar e perguntar como vão as coisas?",
     });
   }
 
@@ -78,7 +78,7 @@ export function situacao(sessoes, nome, agora = new Date()) {
   if (dias === 1)
     return { tom: "bem", titulo: `${nome} se exercitou ontem`, detalhe: "Hoje ainda não teve atividade." };
   if (dias >= DIAS_SEM_ATIVIDADE)
-    return { tom: "atencao", titulo: `${dias} dias sem exercício`, detalhe: "Que tal ligar e perguntar como ela está?" };
+    return { tom: "atencao", titulo: `${dias} dias sem exercício`, detalhe: "Que tal ligar e perguntar como vão as coisas?" };
   return { tom: "neutro", titulo: `Última atividade há ${dias} dias`, detalhe: "Dentro do normal até aqui." };
 }
 

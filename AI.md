@@ -171,6 +171,41 @@
   - O teste ponta a ponta com uma "câmera falsa" (foto em movimento) não rodou porque o navegador de testes estava em segundo plano.
   - **Falta o teste do grupo com a câmera real**, lendo o painel de diagnóstico.
 
+### Etapa 16 — Validação no painel e alerta que escala aos poucos (Claude Code)
+- **Prompt (resumo):**
+  - Faltava validação nos formulários da família.
+  - Na detecção de queda, "se está deitado não precisa ligar para o SAMU": a tela de emergência abria rápido demais.
+- **Observação do processo:** o grupo pediu para *conversar* sobre os pontos e a IA já começou a implementar a validação. O grupo interrompeu, revisou o que tinha sido feito e só então autorizou continuar.
+- **Gerado:**
+  - **Validação:** `lib/validacao.js` (funções puras):
+    - nome com 2 a 60 letras e sem números;
+    - parentesco obrigatório;
+    - telefone com DDD (10 ou 11 dígitos, celular começando com 9), salvo já formatado, e sem repetir um telefone da lista;
+    - exercício com nome de pelo menos 3 letras e sem repetir;
+    - repetições inteiras de 1 a 50.
+
+    O `Campo` mostra o erro embaixo, com `aria-invalid` e `aria-describedby`, e o foco vai para o primeiro campo errado.
+  - **Alerta em níveis** (`useLumi`, `useExercicio`, `AlertaQueda`):
+    1. deitou devagar e ficou parado → a Lumi só pergunta "Você está descansando? Está tudo bem?";
+    2. caiu ou sumiu por baixo → "Você está bem?";
+    3. caiu e não respondeu nem se mexeu → tela "Você está bem? Vou avisar a sua família", com "Estou bem" / "Preciso de ajuda" e o SAMU como link secundário;
+    4. "não", "socorro", "dor no peito" ou "Preciso de ajuda" → tela de emergência com o SAMU como botão principal.
+
+    O `useExercicio` passou a lembrar se houve queda antes de a pessoa ficar parada.
+- **Validação:**
+  - 17 casos novos no `npm run check`.
+  - Na tela: formulário vazio mostra os 3 erros e foca o nome; o telefone da Ana num contato novo é recusado.
+  - "eu caí" abre a emergência com o foco no SAMU, e "Estou bem" fecha.
+  - **Falta testar com a câmera real** os níveis 1 a 3.
+
+### Etapa 17 — Segundo idoso para o vídeo (Claude Code)
+- **Prompt (resumo):** o vídeo do projeto será gravado com um idoso; era preciso trocar "Dona Maria" por "Francisco".
+- **Gerado:**
+  - Dois perfis em `lib/config.js` (Dona Maria, que é o padrão, e Francisco), escolhidos pela URL (`?perfil=francisco`) e lembrados pelo navegador.
+  - A Home passou a ler o nome do perfil, em vez de ter "Dona Maria" escrito no texto.
+  - As frases sobre o idoso ficaram neutras ("como vão as coisas?" no lugar de "como ela está?", "meio sem ânimo" no lugar de "meio parada").
+- **Validação:** com `?perfil=francisco`, a Lumi, o painel e a Home mostraram "Francisco", e a escolha continuou ao trocar de página.
+
 > **Rascunho:** as três seções abaixo foram rascunhadas pela IA a partir do registro das etapas acima. O grupo deve revisar e ajustar com a própria opinião antes da entrega.
 
 ## Aplicação no projeto

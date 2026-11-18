@@ -27,6 +27,9 @@ Projeto da Global Solution 2026.2 (CitizenTech), FIAP, para as disciplinas de Fr
 | `/lumi` | Pessoa idosa (tablet) | Conversa por voz, exercício com câmera, ligação para a família, alerta de queda. |
 | `/familia` | Família | Frase do dia ("se exercitou hoje"), semana em bolinhas, pontos de atenção, histórico ao vivo e CRUD de contatos e da rotina. |
 
+### Trocar o idoso da demonstração
+O padrão é a **Dona Maria**. Para gravar com o **Francisco**, abra qualquer página com `?perfil=francisco` no fim do endereço (ex.: `/lumi?perfil=francisco`). O navegador lembra a escolha; `?perfil=maria` volta ao padrão.
+
 ### Para testar a Lumi por voz
 Toque no rosto da Lumi e fale:
 

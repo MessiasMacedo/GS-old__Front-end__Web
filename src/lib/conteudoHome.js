@@ -3,9 +3,11 @@
  * FOTOS: coloque os arquivos em /public/imagens e troque `src: null` pelo caminho,
  * ex.: src: "/imagens/conversa.jpg". Enquanto for null, aparece um espaço reservado.
  */
+import { PERFIL_DEMO } from "./config";
+
 export const ROTEIRO_HERO = [
-  { estado: "falando", autor: "lumi", texto: "Bom dia, Dona Maria! Dormiu bem?", ms: 3200 },
-  { estado: "ouvindo", autor: "idosa", texto: "Dormi sim. Mas estou meio parada hoje.", ms: 2800 },
+  { estado: "falando", autor: "lumi", texto: `Bom dia, ${PERFIL_DEMO.nome}! Dormiu bem?`, ms: 3200 },
+  { estado: "ouvindo", autor: "idosa", texto: "Dormi sim. Mas hoje estou meio sem ânimo.", ms: 2800 },
   { estado: "pensando", autor: "lumi", texto: "…", ms: 1400 },
   { estado: "falando", autor: "lumi", texto: "Que tal alongar os braços comigo? São só cinco minutinhos.", ms: 3800 },
   { estado: "ouvindo", autor: "idosa", texto: "Vamos lá!", ms: 2000 },

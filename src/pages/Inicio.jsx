@@ -7,6 +7,7 @@ import PreviaExercicio from "@/components/site/PreviaExercicio";
 import ListaAlertas from "@/components/familia/ListaAlertas";
 import { IconeCheck, IconeX } from "@/components/lumi/Icones";
 import { PROBLEMA, FOTOS_SOZINHO, DADOS, PILARES, EXERCICIOS, COMO_FUNCIONA, PRIVACIDADE } from "@/lib/conteudoHome";
+import { PERFIL_DEMO } from "@/lib/config";
 
 // Posição de cada foto no mosaico: a primeira ocupa 2×2, a segunda uma faixa larga.
 const MOSAICO = [
@@ -21,7 +22,7 @@ const SEMANA_EXEMPLO = [
   ["Seg", true], ["Ter", true], ["Qua", true], ["Qui", true], ["Sex", false], ["Sáb", false], ["Dom", false],
 ];
 const ALERTA_EXEMPLO = [
-  { id: "ex", titulo: "3 dias sem exercícios", detalhe: "Que tal ligar e perguntar como ela está?" },
+  { id: "ex", titulo: "3 dias sem exercícios", detalhe: "Que tal ligar e perguntar como vão as coisas?" },
 ];
 
 export default function Inicio() {
@@ -176,7 +177,7 @@ export default function Inicio() {
             </div>
 
             <div className="rounded-[2rem] bg-white p-6 shadow-xl ring-1 ring-old-azul/10 sm:p-8" role="group" aria-label="Exemplo do painel da família">
-              <p className="text-xl font-bold text-old-azul">Dona Maria esta semana</p>
+              <p className="text-xl font-bold text-old-azul">{PERFIL_DEMO.nome} esta semana</p>
               <ol className="mt-4 grid grid-cols-7 gap-2">
                 {SEMANA_EXEMPLO.map(([dia, ativo]) => (
                   <li key={dia} className="flex flex-col items-center gap-2">

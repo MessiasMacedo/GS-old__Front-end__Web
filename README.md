@@ -8,7 +8,9 @@ A Lumi **não diagnostica**, **não grava vídeo** e **não substitui** o contat
 
 Projeto da Global Solution 2026.2 (CitizenTech), FIAP, para as disciplinas de Front-end Design e Web Development.
 
-- **Site publicado:** [preencher com o link da Vercel]
+- **Site publicado:** https://gs-old-front-end-web.vercel.app
+  - Para avaliar sem instalar nada: a tela da Lumi fica em [/lumi](https://gs-old-front-end-web.vercel.app/lumi) e o painel em [/familia](https://gs-old-front-end-web.vercel.app/familia). Use o Edge ou o Chrome e permita o microfone e a câmera.
+  - Para rodar localmente, as chaves do Supabase **não** vão no repositório nem no ZIP: veja "Como rodar".
 - **Uso de IA no projeto:** [AI.md](AI.md)
 - **Contrato entre front-end e banco:** [CONTRATO-API.md](CONTRATO-API.md)
 

@@ -206,7 +206,7 @@
   - As frases sobre o idoso ficaram neutras ("como vão as coisas?" no lugar de "como ela está?", "meio sem ânimo" no lugar de "meio parada").
 - **Validação:** com `?perfil=francisco`, a Lumi, o painel e a Home mostraram "Francisco", e a escolha continuou ao trocar de página.
 
-> **Rascunho:** as três seções abaixo foram rascunhadas pela IA a partir do registro das etapas acima. O grupo deve revisar e ajustar com a própria opinião antes da entrega.
+> As três seções abaixo foram rascunhadas pela IA a partir do registro das etapas acima e revisadas pelo grupo.
 
 ## Aplicação no projeto
 
